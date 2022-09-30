@@ -2,7 +2,7 @@
 platform: any
 env: any
 name: storyboard.py
-storyboard assembler
+assemble components of a storyboard and associate with given chart
 """
 from util.storyboard.storyboard import StoryBoard
 from util.chart.analyzer import Chart
