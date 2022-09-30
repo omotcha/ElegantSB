@@ -1,1 +1,2 @@
 [#1] chart offset not considered yet
+[#2] test how json parses None object values
