@@ -24,24 +24,24 @@ class ChartAnalyzer:
         """
         if by == "note_id":
             if not isinstance(query, int) or query < 0 or query >= self._chart.get_note_num():
-                print("Error: Invalid note ID: {}".format(query))
+                print("QueryError: Invalid note ID: {}.".format(query))
                 return
             tick = self._chart.note_list[query].tick
 
         elif by == "page_id":
             if not isinstance(query, int) or query < 0 or query >= self._chart.get_page_num():
-                print("Error: Invalid page ID: {}".format(query))
+                print("QueryError: Invalid page ID: {}.".format(query))
                 return
             tick = self._chart.page_list[query].start_tick
 
         elif by == "tick":
             if not isinstance(query, int) or query < 0 or query > self._chart.get_max_tick():
-                print("Error: Invalid tick value: {}".format(query))
+                print("QueryError: Invalid tick value: {}.".format(query))
                 return
             tick = query
 
         else:
-            print("Error: Not supported query type: {}".format(by))
+            print("QueryError: Not supported query type: {}.".format(by))
             return
 
         abs_time = 0
@@ -61,7 +61,7 @@ class ChartAnalyzer:
         :return: page id(int)
         """
         if abs_time < 0 or abs_time > self._chart.get_max_time():
-            print("Error: Invalid query time: {}".format(abs_time))
+            print("QueryError: Invalid query time: {}.".format(abs_time))
             return -1
 
         page_id = 0

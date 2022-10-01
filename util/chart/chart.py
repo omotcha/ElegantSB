@@ -65,15 +65,15 @@ class Chart:
         """
         _, ext = os.path.splitext(chart_f)
         if ext != ".json":
-            raise (Exception("Error: Not a valid chart file format: {}".format(ext)))
+            raise (Exception("FileError: Not a valid chart file format: {}.".format(ext)))
         try:
             with open(chart_f, "r") as f:
                 chart_dict = json.load(f)
         except FileNotFoundError:
-            print("Error: No such chart file: {}".format(chart_f))
+            print("FileError: No such chart file: {}.".format(chart_f))
             return
         except JSONDecodeError:
-            print("Error: Bad chart content: {}".format(chart_f))
+            print("JSONError: Bad chart content: {}.".format(chart_f))
             return
         self.format_version = chart_dict["format_version"]
         self.time_base = chart_dict["time_base"]
