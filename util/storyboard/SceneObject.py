@@ -105,7 +105,7 @@ class SceneObject:
     def hatch(self, at, init=None):
         """
         It should be the first action(or state change) of an object.
-        After that, the object's is "active" and listens for next action
+        After that, the object's state is "active" and listens for next action
         :param at: when to hatch (absolute time)
         :param init: initialized state (dict)
         :return:

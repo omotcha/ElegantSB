@@ -3,7 +3,6 @@ platform: any
 env: any
 name: Storyboard.py
 storyboard and member objects
-reference: https://www.notion.so/Full-Specification-4aece3f705d0485495b64564167e76ce
 """
 from util.storyboard.Text import Text
 import json
