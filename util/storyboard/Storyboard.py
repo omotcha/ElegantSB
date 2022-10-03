@@ -36,7 +36,10 @@ class StoryBoard:
         """
         ret = {}
         if len(self.texts) > 0:
-            ret["texts"] = [i.to_dict() for i in self.texts]
+            ret["texts"] = []
+            for text in self.texts:
+                for state in text.to_storyboard():
+                    ret["texts"].append(state)
         if len(self.sprites) > 0:
             ret["sprites"] = [i.to_dict() for i in self.sprites]
         if len(self.lines) > 0:

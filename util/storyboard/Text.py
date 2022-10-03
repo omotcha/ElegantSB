@@ -6,8 +6,7 @@ text object and its state
 """
 from util.storyboard.base import Animation
 from util.storyboard.SceneObject import SceneObject, SceneObjectState
-from bisect import bisect_right
-from copy import deepcopy
+from util.storyboard.base import ActionPipe
 
 # [omo]tcha: here I limit some properties' ability to morph
 morphable_props = ["size", "opacity", "layer", "order", "color", "align", "letter_spacing", "font_weight"]
@@ -49,26 +48,28 @@ class Text(SceneObject):
         self._text = text_content
         self._id = "text_" + self._id
 
-    def hatch(self, at, init=None):
+    def hatch(self, at, to=(0, 0), init=None):
         """
         It should be the first action(or state change) of an object.
         After that, the object's state is "active" and listens for next action
         :param at: when to hatch (absolute time)
+        :param to: where to hatch ((x, y) in stageXY coord sys)
         :param init: initialized state (dict)
         :return:
         """
         if self._current_state == "egg":
             if at < 0:
                 raise (Exception("ValueError: Time should be greater than 0, but have {}.".format(at)))
-            self._states[at] = TextState(time=at, easing="linear")
             if init is not None:
                 if isinstance(init, dict):
                     for k in init.keys():
                         # [omo]tcha: init can be regarded as the first morph
                         if k not in morphable_props:
                             raise (Exception("KeyError: Key {} cannot be used for initializing.".format(k)))
+                    init["x"] = to[0]
+                    init["y"] = to[1]
                     for k in init.keys():
-                        setattr(self._states[at], k, init[k])
+                        self._actions[k] = ActionPipe(at, init[k])
                 else:
                     raise (Exception("ParameterError: init should be a dictionary."))
             self._current_state = "active"
@@ -96,24 +97,16 @@ class Text(SceneObject):
 
             easing = animation.easing if animation is not None else "linear"
 
-            # inherit a state with the latest time
-            latest_t = self.inherit_latest_state(at=at, easing=easing)
+            if to[0] is not None:
+                if "x" not in self._actions.keys():
+                    self._actions["x"] = ActionPipe(self._hatch_time, to[0])
+                self._actions["x"].add(at, duration=duration, value=to[0], easing=easing)
 
-            des_time = at + duration
-            if des_time in self._states.keys():
-                if to[0] is not None:
-                    self._states[des_time].x = to[0]
-                if to[1] is not None:
-                    self._states[des_time].y = to[1]
-            else:
-                des_state = deepcopy(self._states[at])
-                des_state.time = des_time
-                des_state.easing = self._states[latest_t].easing
-                if to[0] is not None:
-                    des_state.x = to[0]
-                if to[1] is not None:
-                    des_state.y = to[1]
-                self._states[des_time] = des_state
+            if to[1] is not None:
+                if "y" not in self._actions.keys():
+                    self._actions["y"] = ActionPipe(self._hatch_time, to[1])
+                self._actions["y"].add(at, duration=duration, value=to[1], easing=easing)
+
         else:
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
         return self
@@ -138,28 +131,11 @@ class Text(SceneObject):
 
             easing = animation.easing if animation is not None else "linear"
 
-            # inherit a state with the latest time
-            latest_t = self.inherit_latest_state(at=at, easing=easing)
+            prop = "rot_{}".format(axis)
+            if prop not in self._actions.keys():
+                self._actions[prop] = ActionPipe(self._hatch_time, degree)
+            self._actions[prop].add(at, duration=duration, value=degree, easing=easing)
 
-            des_time = at + duration
-            if des_time in self._states.keys():
-                if axis == "x":
-                    self._states[des_time].rot_x = degree
-                elif axis == "y":
-                    self._states[des_time].rot_y = degree
-                else:
-                    self._states[des_time].rot_z = degree
-            else:
-                des_state = deepcopy(self._states[at])
-                des_state.time = des_time
-                des_state.easing = self._states[latest_t].easing
-                if axis == "x":
-                    des_state.rot_x = degree
-                elif axis == "y":
-                    des_state.rot_y = degree
-                else:
-                    des_state.rot_z = degree
-                self._states[des_time] = des_state
         else:
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
         return self
@@ -185,20 +161,11 @@ class Text(SceneObject):
                         if k not in morphable_props:
                             raise (Exception("KeyError: Key {} cannot be used for initializing.".format(k)))
 
-                    # inherit a state with the latest time
-                    latest_t = self.inherit_latest_state(at=at, easing=easing)
+                    for k in to_morph.keys():
+                        if k not in self._actions.keys():
+                            self._actions[k] = ActionPipe(self._hatch_time, to_morph[k])
+                        self._actions[k].add(at, duration=duration, value=to_morph[k], easing=easing)
 
-                    des_time = at + duration
-                    if des_time in self._states.keys():
-                        for k in to_morph.keys():
-                            setattr(self._states[des_time], k, to_morph[k])
-                    else:
-                        des_state = deepcopy(self._states[at])
-                        des_state.time = des_time
-                        des_state.easing = self._states[latest_t].easing
-                        for k in to_morph.keys():
-                            setattr(des_state, k, to_morph[k])
-                        self._states[des_time] = des_state
                 else:
                     raise (Exception("ParameterError: to_morph should be a dictionary."))
             else:
@@ -208,45 +175,67 @@ class Text(SceneObject):
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
         return self
 
-    def to_dict(self):
+    def to_storyboard(self):
         """
-        Parse object to storyboard dictionary
+        Parse object to storyboard object
         :return:
         """
-        ret = {"text": self._text, "states": []}
-        for _, state in self._states.items():
-            ret["states"].append(state.to_dict())
+        first = True
+        ret = []
+        for prop, pipe in self._actions.items():
+            pipe = pipe.to_list()
+            if first:
+                dic_first = {
+                    "text": self._text,
+                    "id": self._id,
+                    "states": [{
+                        "time": pipe[0][0],
+                        prop: pipe[0][2],
+                        "easing": pipe[0][3]
+                    }]
+                }
+                for i in range(1, len(pipe)):
+                    dic_first["states"].append({
+                        "time": pipe[i][0],
+                        prop: pipe[i-1][2],
+                        "easing": pipe[i][3]
+                    })
+                    dic_first["states"].append({
+                        "time": pipe[i][1],
+                        prop: pipe[i][2],
+                        "easing": pipe[i-1][3]
+                    })
+                ret.append(dic_first)
+                first = False
+            else:
+                dic = {
+                    "target_id": self._id,
+                    "states": [{
+                        "time": pipe[0][0],
+                        prop: pipe[0][2],
+                        "easing": pipe[0][3]
+                    }]
+                }
+                for i in range(1, len(pipe)):
+                    dic["states"].append({
+                        "time": pipe[i][0],
+                        prop: pipe[i-1][2],
+                        "easing": pipe[i][3]
+                    })
+                    dic["states"].append({
+                        "time": pipe[i][1],
+                        prop: pipe[i][2],
+                        "easing": pipe[i-1][3]
+                    })
+                ret.append(dic)
         return ret
-
-    def inherit_latest_state(self, at, easing):
-        """
-        deep copy the latest state to current time
-        [omo]tcha: the auto-update of state inheritance is not supported,
-        that is to say, if later you add a state with time new_t within (latest_t, at),
-        this latest_t and the state at this time would not be updated automatically,
-        thus the storyboard may not behave as expected
-        :param at: current time (absolute time)
-        :param easing: easing at current time
-        :return:
-        """
-        key_list = list(self._states.keys())
-        bi = bisect_right(key_list, at)
-        if bi:
-            latest_t = key_list[bi - 1]
-            if latest_t < at:
-                at_state = deepcopy(self._states[latest_t])
-                at_state.time = at
-                at_state.easing = easing
-                self._states[at] = at_state
-        else:
-            raise (Exception("ValueError: Unexpected bisection error for time: {}".format(at)))
-        return latest_t
 
 
 if __name__ == '__main__':
-    ani = Animation()
-    ani.easing = "easeInBack"
-    elegantTxt = Text("elegant").hatch(at=10, init={"color": "#F00"})\
-                                .morph(at=11, to_morph={"opacity": 1}, duration=1, animation=ani)\
-                                .move(at=11, to=(100, 200), duration=10, animation=ani)
-    print(elegantTxt.to_dict())
+    linearAnimation = Animation()
+    inSineAnimation = Animation()
+    inSineAnimation.easing = "easeInSine"
+    elegantTxt = Text("elegant").hatch(at=10, to=(50, 50), init={"color": "#F00", "opacity": 0})\
+                                .morph(at=11, to_morph={"opacity": 1}, duration=1, animation=linearAnimation)\
+                                .move(at=11, to=(100, 200), duration=10, animation=inSineAnimation)
+    print(elegantTxt.to_storyboard())

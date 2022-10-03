@@ -93,20 +93,23 @@ class SceneObject:
         """
         Create an object.
         self._id is a unique id of an object
-        self._states is a dictionary that holds states of all modified properties with respect to time
+        self._states is a list of dictionaries that hold states of all modified properties with respect to time
         self._current_state is the object lifecycle state
         self._hatch_time is when the object is hatched
+        self._actions is the dictionary of action pipelines
         """
         self._id = str(id(self))
-        self._states = {}
+        self._states = []
         self._current_state = "egg"
         self._hatch_time = 0
+        self._actions = {}
 
-    def hatch(self, at, init=None):
+    def hatch(self, at, to, init=None):
         """
         It should be the first action(or state change) of an object.
         After that, the object's state is "active" and listens for next action
         :param at: when to hatch (absolute time)
+        :param to: where to hatch ((x, y) in stageXY coord sys)
         :param init: initialized state (dict)
         :return:
         """
@@ -211,16 +214,9 @@ class SceneObject:
         """
         return
 
-    def get_latest_state(self):
-        keys = self._states.keys()
-        if len(keys) == 0:
-            return None
-        else:
-            return self._states[max(keys)]
-
-    def to_dict(self):
+    def to_storyboard(self):
         """
-        Parse object to storyboard dictionary, do not use it directly
+        Parse object to storyboard object, do not use it directly
         :return:
         """
         return

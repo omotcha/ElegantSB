@@ -19,6 +19,7 @@ class Vertex:
 class Animation:
     def __init__(self):
         self.type = None
+        self.speed = "normal"
         self.easing = "linear"
 
 
@@ -35,8 +36,8 @@ class NoteSelector:
 class ActionPipe:
     """
     [omo]tcha: ActionPipe is a data structure to store and manage actions.
-    Here action is divided into a minimized form: a single property.
-    ActionPipe maintains a list of tuples: (start_time, end_time, value of property)
+    Here action is minimized upon a single property.
+    ActionPipe maintains a list of tuples (start_time, end_time, value of property, easing type)
     that each time period (from start_time to end_time) cannot overlap with each other.
     For simplicity, I use a dictionary with action start_time as keys instead.
     """
@@ -44,15 +45,16 @@ class ActionPipe:
     def __init__(self, hatch_time, hatch_value):
         if hatch_time < 0 or hatch_time >= MAX_PIPE_TIME:
             raise (Exception("ValueError: Invalid hatch time: {}".format(hatch_time)))
-        self._pipe = {hatch_time: (hatch_time, hatch_time, hatch_value)}
+        self._pipe = {hatch_time: (hatch_time, hatch_time, hatch_value, "linear")}
         self._hatch_time = hatch_time
 
-    def add(self, at, duration, value):
+    def add(self, at, duration, value, easing):
         """
-        add am action to the pipe
+        Add am action to the pipe
         :param at: start_time (absolute time)
         :param duration: end_time - start_time
-        :param value:
+        :param value: value of property
+        :param easing: easing type
         :return:
         """
         if at < self._hatch_time or at + duration >= MAX_PIPE_TIME:
@@ -63,7 +65,7 @@ class ActionPipe:
             if at >= self._pipe[key_list[bi - 1]][1] \
                     and bi == len(key_list) \
                     or at + duration <= self._pipe[key_list[bi]][0]:
-                self._pipe[at] = (at, at + duration, value)
+                self._pipe[at] = (at, at + duration, value, easing)
                 return True
             else:
                 print("Warning: Current action pipe cannot hold this time period: {} - {}".format(at, at + duration))
@@ -77,7 +79,7 @@ class ActionPipe:
 
 if __name__ == '__main__':
     opacity_pipe = ActionPipe(hatch_time=0, hatch_value=0)
-    opacity_pipe.add(at=1, duration=10, value=1)
-    opacity_pipe.add(at=20, duration=10, value=0)
-    opacity_pipe.add(at=11, duration=10, value=0.5)
+    opacity_pipe.add(at=1, duration=10, value=1, easing="easeInCube")
+    opacity_pipe.add(at=20, duration=10, value=0, easing="easeOutCube")
+    opacity_pipe.add(at=11, duration=9, value=0.5, easing="linear")
     print(opacity_pipe.to_list())
