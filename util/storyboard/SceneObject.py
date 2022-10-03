@@ -127,7 +127,7 @@ class SceneObject:
         :param at: when to move (absolute time)
         :param to: where to move to ((x, y) in stageXY coord sys)
         :param duration: how long to move (time)
-        :param animation: how to move (Animation)
+        :param animation: how to move (Animation indicating easing)
         :return:
         """
         if self._current_state == "active":
@@ -146,7 +146,7 @@ class SceneObject:
         :param axis: on which axis to rotate ("x"/"y"/"z" str)
         :param degree: degree to rotate (number)
         :param duration: how long to move (time)
-        :param animation: how to move (Animation)
+        :param animation: how to move (Animation indicating easing)
         :return:
         """
         if self._current_state == "active":
@@ -158,14 +158,13 @@ class SceneObject:
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
         return self
 
-    def morph(self, prop, value, at, duration, animation):
+    def morph(self, at, to_morph, duration, animation):
         """
         Change one morphology-related state property of an active object
-        :param prop: which property to morph (str)
-        :param value: new property value (any matched value)
         :param at: when to morph (absolute time)
+        :param to_morph: which properties to morph (dictionary of (property to morph, new value))
         :param duration: how long to morph (time)
-        :param animation: how to morph (Animation)
+        :param animation: how to morph (Animation indicating easing)
         :return:
         """
         if self._current_state == "active":
@@ -177,10 +176,20 @@ class SceneObject:
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
         return self
 
+    def mutate(self, at, to_mutate, animation):
+        """
+        Change one property of an active object in a short time period like a pulse.
+        This may be conflict with morph(), treat it carefully
+        :param at: when to mutate (absolute time)
+        :param to_mutate: which properties to mutate (dictionary of (property to mutate, mutate value))
+        :param animation: how to mutate (Animation indicating easing and mutate_speed)
+        :return:
+        """
+
     def imitate(self, at, target):
         """
-        Current object imitates (hard_copy) the latest state of another object
-        This is a "higher-level" action of an object, so treat it carefully
+        Current object imitates (hard_copy) the latest state of another object.
+        This is a "higher-level" action of an object, treat it carefully
         :param at: when to imitate (absolute time)
         :param target: the target object to imitate (SceneObject)
         :return:
@@ -193,6 +202,14 @@ class SceneObject:
         else:
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
         return self
+
+    def destroy(self, at):
+        """
+        Destroy the object
+        :param at:
+        :return:
+        """
+        return
 
     def get_latest_state(self):
         keys = self._states.keys()
