@@ -7,7 +7,7 @@ this is the programming interface in Iter1
 import os
 from configs.config import example_dir
 from util.chart.analyzer import ChartAnalyzer
-from util.storyboard.Text import Text, TextState
+from util.storyboard.Text import Text
 from util.storyboard.base import Animation
 from util.storyboard.Storyboard import StoryBoard
 
@@ -48,18 +48,26 @@ def assemble():
     # here "hatch" is similar with "initialize", and "morph" is similar with "state change"
     # P.S. here "t[19]" is similar with "start:19", "t[a]+b" is similar with "start:a:b"
 
-    elegant_text = Text(r"NHELV").hatch(at=t[19], init=init)\
+    nhelv_text = Text(r"NHELV").hatch(at=t[19], init=init)\
         .morph(at=t[19], to_morph={"opacity": 1}, duration=4)\
         .rotate(at=t[21], axis="z", degree=90, duration=11)\
         .scale(at=t[46], axis="xy", value=1.5, duration=5, pivot=1)\
         .mutate(at=t[39], to_mutate={"scale": 3}, animation=ani)
 
     # when everything is done with our elegant text, we add it to our storyboard
-    my_storyboard.add(elegant_text)
+    my_storyboard.add(nhelv_text)
+
+    # Now we can try another text that imitates the previous one
+    # As default, these two text overlap with each other for they have some x,y
+    # Here we use a simple trick: move down the new text at the same time with 0 duration
+    sltrm_text = Text(r"SilentRoom").imitate(at=t[19], target=nhelv_text).move(at=t[19], to=(0, -150), duration=0)
+    sltrm_text.destroy(at=t[100])
+
+    # Now we can add the second text to our storyboard
+    my_storyboard.add(sltrm_text)
 
     # finally, parse the storyboard to JSON
     print(my_storyboard.parse())
-    return my_storyboard.parse()
 
 
 if __name__ == '__main__':

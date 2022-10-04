@@ -4,8 +4,7 @@ env: any
 name: SceneObject.py
 scene object and its state
 """
-import json
-
+from util.storyboard.base import ActionPipe
 
 class SceneObjectState:
     def __init__(self, time, easing="linear"):
@@ -97,12 +96,14 @@ class SceneObject:
         self._current_state is the object lifecycle state
         self._hatch_time is when the object is hatched
         self._actions is the dictionary of action pipelines
+        self._delay is used when imitating
         """
         self._id = str(id(self))
         self._states = []
         self._current_state = "egg"
         self._hatch_time = 0
         self._actions = {}
+        self._delay = 0
 
     def hatch(self, at, to, init=None):
         """
@@ -224,7 +225,7 @@ class SceneObject:
         By imitating, the object forgets all previously defined actions and follow the target ones.
         Here "follow" is not logically-true if at is smaller than the hatch time of target.
         In such case, it is like target is "following" this object.
-        This is a "higher-level" action of an object, treat it carefully.
+        This is a "higher-level" action of an object, treat it carefully
         :param at: when to imitate (absolute time)
         :param target: the target object to imitate (SceneObject)
         :return:
@@ -241,14 +242,15 @@ class SceneObject:
     def destroy(self, at):
         """
         Destroy the object
-        :param at:
+        :param at: time to destroy (absolute time)
         :return:
         """
         if self._current_state == "active":
-            # you should add a new scene object state here ↓
-
-            # you should add a new scene object state here ↑
-            print("A scene object destroys.")
+            if at <= self._hatch_time:
+                raise (Exception("ValueError: Cannot destroy an object before it hatches."))
+            if "destroy" not in self._actions.keys():
+                self._actions["destroy"] = ActionPipe(self._hatch_time, False)
+            self._actions["destroy"].add(at, duration=0.01, value=True, easing="linear")
             self._current_state = "destroyed"
         else:
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
