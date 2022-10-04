@@ -9,7 +9,9 @@ from util.storyboard.SceneObject import SceneObject, SceneObjectState
 from util.storyboard.base import ActionPipe
 
 # [omo]tcha: here I limit some properties' ability to morph
-morphable_props = ["size", "opacity", "layer", "order", "color", "align", "letter_spacing", "font_weight"]
+morphable_props = ["opacity", "layer", "order", "color", "align", "letter_spacing", "font_weight"]
+scalable_props = ["scale", "scale_x", "scale_y"]
+settable_props = ["pivot_x", "pivot_y", "destroy"]
 movable_props = ["x", "y"]
 rotatable_props = ["rot_x", "rot_y", "rot_z"]
 
@@ -35,6 +37,12 @@ class TextState(SceneObjectState):
         ret["align"] = self.align
         ret["letter_spacing"] = self.letter_spacing
         ret["font_weight"] = self.font_weight
+        return ret
+
+    def init(self):
+        ret = {}
+        for prop in morphable_props + scalable_props + settable_props + rotatable_props:
+            ret[prop] = self.__getattribute__(prop)
         return ret
 
 
@@ -64,7 +72,7 @@ class Text(SceneObject):
                 if isinstance(init, dict):
                     for k in init.keys():
                         # [omo]tcha: init can be regarded as the first morph
-                        if k not in morphable_props:
+                        if k not in morphable_props + rotatable_props + scalable_props + settable_props:
                             raise (Exception("KeyError: Key {} cannot be used for initializing.".format(k)))
                     init["x"] = to[0]
                     init["y"] = to[1]
@@ -78,7 +86,7 @@ class Text(SceneObject):
             raise (Exception("ActionError: The object has been hatched before: {}.".format(self._id)))
         return self
 
-    def move(self, at, to, duration, animation):
+    def move(self, at, to, duration, animation=None):
         """
         Change position-related state property of an active object
         :param at: when to move (absolute time)
@@ -111,7 +119,7 @@ class Text(SceneObject):
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
         return self
 
-    def rotate(self, at, axis, degree, duration, animation):
+    def rotate(self, at, axis, degree, duration, animation=None, pivot=None):
         """
         Change rotation-related state property of an active object
         :param at: when to rotate (absolute time)
@@ -119,6 +127,7 @@ class Text(SceneObject):
         :param degree: degree to rotate (number)
         :param duration: how long to move (time)
         :param animation: how to move (Animation)
+        :param pivot: pivot of rotation
         :return:
         """
         if self._current_state == "active":
@@ -136,11 +145,62 @@ class Text(SceneObject):
                 self._actions[prop] = ActionPipe(self._hatch_time, degree)
             self._actions[prop].add(at, duration=duration, value=degree, easing=easing)
 
+            if axis == "x" or axis == "y" and pivot is not None:
+                prop = "pivot_{}".format(axis)
+                if prop not in self._actions.keys():
+                    self._actions[prop] = ActionPipe(self._hatch_time, pivot)
+                self._actions[prop].add(at, duration=duration, value=pivot, easing=easing)
+
         else:
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
         return self
 
-    def morph(self, at, to_morph, duration, animation):
+    def scale(self, at, axis, value, duration, animation=None, pivot=None):
+        """
+        Change scaling-related state property of an active object
+        :param at: when to scale (absolute time)
+        :param axis: on which axis to scale ("x"/"y"/"xy" str)
+        :param value: scaling factor
+        :param duration: how long to move (time)
+        :param animation: how to move (Animation indicating easing)
+        :param pivot: pivot: pivot of scaling
+        :return:
+        """
+        if self._current_state == "active":
+            if at < self._hatch_time:
+                raise (Exception("ValueError: Time should be greater than _hatch_time, but have {}.".format(at)))
+            if axis not in ["x", "y", "xy"]:
+                raise (Exception("ValueError: Axis should be like 'x'/'y'/'xy', but have {}".format(axis)))
+            if duration < 0:
+                raise (Exception("ValueError: Duration should be greater than 0, but have {}".format(duration)))
+
+            easing = animation.easing if animation is not None else "linear"
+
+            if axis == "xy":
+                prop = "scale"
+            else:
+                prop = "scale_{}".format(axis)
+            if prop not in self._actions.keys():
+                self._actions[prop] = ActionPipe(self._hatch_time, value)
+            self._actions[prop].add(at, duration=duration, value=value, easing=easing)
+
+            if pivot is not None:
+                if axis != "x":
+                    prop = "pivot_y".format(axis)
+                    if prop not in self._actions.keys():
+                        self._actions[prop] = ActionPipe(self._hatch_time, pivot)
+                    self._actions[prop].add(at, duration=duration, value=pivot, easing=easing)
+                if axis != "y":
+                    prop = "pivot_x".format(axis)
+                    if prop not in self._actions.keys():
+                        self._actions[prop] = ActionPipe(self._hatch_time, pivot)
+                    self._actions[prop].add(at, duration=duration, value=pivot, easing=easing)
+
+        else:
+            raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
+        return self
+
+    def morph(self, at, to_morph, duration, animation=None):
         """
         Change one morphology-related state property of an active object
         :param at: when to morph (absolute time)
@@ -159,7 +219,7 @@ class Text(SceneObject):
                 if isinstance(to_morph, dict):
                     for k in to_morph.keys():
                         if k not in morphable_props:
-                            raise (Exception("KeyError: Key {} cannot be used for initializing.".format(k)))
+                            raise (Exception("KeyError: Key {} cannot be used for morphing.".format(k)))
 
                     for k in to_morph.keys():
                         if k not in self._actions.keys():
@@ -177,13 +237,15 @@ class Text(SceneObject):
 
     def to_storyboard(self):
         """
-        Parse object to storyboard object
+        Parse pipes to states then to storyboard objects
         :return:
         """
         first = True
         ret = []
         for prop, pipe in self._actions.items():
             pipe = pipe.to_list()
+            # [omo]tcha: the first item has text content and its id,
+            # while the other items are targeted to the first one
             if first:
                 dic_first = {
                     "text": self._text,

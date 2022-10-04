@@ -82,6 +82,24 @@ class ChartAnalyzer:
         else:
             return self._chart.page_list[page_id].start_tick, self._chart.page_list[page_id].end_tick
 
+    def get_page_num(self):
+        return self._chart.get_page_num()
+
+    def get_tempo_num(self):
+        return self._chart.get_tempo_num()
+
+    def get_note_num(self):
+        return self._chart.get_note_num()
+
+    def get_events_num(self):
+        return self._chart.get_events_num()
+
+    def get_max_tick(self):
+        return self._chart.get_max_tick()
+
+    def get_max_time(self):
+        return self._chart.get_max_time()
+
 
 if __name__ == '__main__':
     analyzer = ChartAnalyzer(os.path.join(example_dir, "nhelv.json"))

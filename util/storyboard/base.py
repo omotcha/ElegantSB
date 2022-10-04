@@ -43,6 +43,11 @@ class ActionPipe:
     """
 
     def __init__(self, hatch_time, hatch_value):
+        """
+        The first action should be "hatch" action, with start_time equals end_time
+        :param hatch_time:
+        :param hatch_value:
+        """
         if hatch_time < 0 or hatch_time >= MAX_PIPE_TIME:
             raise (Exception("ValueError: Invalid hatch time: {}".format(hatch_time)))
         self._pipe = {hatch_time: (hatch_time, hatch_time, hatch_value, "linear")}
@@ -50,7 +55,7 @@ class ActionPipe:
 
     def add(self, at, duration, value, easing):
         """
-        Add am action to the pipe
+        Add an action to the pipe
         :param at: start_time (absolute time)
         :param duration: end_time - start_time
         :param value: value of property

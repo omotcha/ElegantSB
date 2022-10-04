@@ -4,12 +4,12 @@ env: any
 name: Storyboard.py
 this is the programming interface in Iter1
 """
-from configs.config import example_dir
 import os
-from util.storyboard.Storyboard import StoryBoard
+from configs.config import example_dir
 from util.chart.analyzer import ChartAnalyzer
-from util.storyboard.Text import Text
+from util.storyboard.Text import Text, TextState
 from util.storyboard.base import Animation
+from util.storyboard.Storyboard import StoryBoard
 
 
 def assemble():
@@ -17,16 +17,39 @@ def assemble():
     # first we create a storyboard object
     my_storyboard = StoryBoard()
 
+    # second we create a linear animation widget
+    ani = Animation()
+
     # chart analyzer is a helpful tool to get important information, e.g. absolute time
     analyzer = ChartAnalyzer(os.path.join(example_dir, "nhelv.json"))
 
-    # here we get the absolute time of the 20th note (counting from 0) and store the time value to "t"
-    t = analyzer.get_time(query=19, by="note_id")
+    # here we generate the absolute time of all notes (counting from 0) and store them to list "t"
+    t = [analyzer.get_time(query=i, by="note_id") for i in range(analyzer.get_note_num())]
 
-    # then we add a text object "elegant" and hatch it at time t with color "#F00"
-    # here "hatch" is similar with "initialize", and as a result, it creates a text with 0 opacity
-    elegant_text = Text(r"NHELV").hatch(at=t, init={"color": "#FFF", "opacity": 0})\
-        .morph(at=t+0.1, to_morph={"opacity": 1}, duration=4, animation=Animation())
+    # We might want to add a text object and hatch it with an initialized parameters like this:
+    init = {
+        "color": "#FFF",
+        "opacity": 0,
+        "rot_z": 0,
+        "scale": 1,
+        "pivot_x": 0.5,
+        "pivot_y": 0.5
+    }
+
+    # Or we can just get all parameters initialized with default values like this:
+    # init = TextState(t[19]).init()
+
+    # After hatching, we append a morph action followed by a rotation then a morph to the object.
+    # The first morph action starts at the 20th note, it changes the opacity from 0 to 1  in 4 seconds.
+    # The rotation action starts at the 22nd note, it rotates the text along z-axis for 90 degrees in 10 seconds.
+    # The second morph action starts at the 46th note, it scales the text to 1.5x the original size in 5 seconds.
+    # here "hatch" is similar with "initialize", and "morph" is similar with "state change"
+    # P.S. here "t[19]+0.5" is similar with "start:19:0.5"
+
+    elegant_text = Text(r"NHELV").hatch(at=t[19], init=init)\
+        .morph(at=t[19], to_morph={"opacity": 1}, duration=4)\
+        .rotate(at=t[21], axis="z", degree=90, duration=11)\
+        .scale(at=t[46], axis="xy", value=1.5, duration=5, pivot=1)
 
     # when everything is done with our elegant text, we add it to our storyboard
     my_storyboard.add(elegant_text)

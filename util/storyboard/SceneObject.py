@@ -124,7 +124,7 @@ class SceneObject:
             raise(Exception("ActionError: The object has been hatched before: {}.".format(self._id)))
         return self
 
-    def move(self, at, to, duration, animation):
+    def move(self, at, to, duration, animation=None):
         """
         Change position-related state property of an active object
         :param at: when to move (absolute time)
@@ -142,7 +142,7 @@ class SceneObject:
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
         return self
 
-    def rotate(self, at, axis, degree, duration, animation):
+    def rotate(self, at, axis, degree, duration, animation=None, pivot=None):
         """
         Change rotation-related state property of an active object
         :param at: when to rotate (absolute time)
@@ -150,6 +150,7 @@ class SceneObject:
         :param degree: degree to rotate (number)
         :param duration: how long to move (time)
         :param animation: how to move (Animation indicating easing)
+        :param pivot: pivot of rotation
         :return:
         """
         if self._current_state == "active":
@@ -161,7 +162,27 @@ class SceneObject:
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
         return self
 
-    def morph(self, at, to_morph, duration, animation):
+    def scale(self, at, axis, value, duration, animation=None, pivot=None):
+        """
+        Change scaling-related state property of an active object
+        :param at: when to scale (absolute time)
+        :param axis: on which axis to scale ("x"/"y"/"xy" str)
+        :param value: scaling factor
+        :param duration: how long to move (time)
+        :param animation: how to move (Animation indicating easing)
+        :param pivot: pivot: pivot of scaling
+        :return:
+        """
+        if self._current_state == "active":
+            # you should add a new scene object state here ↓
+
+            # you should add a new scene object state here ↑
+            print("A scene object scales.")
+        else:
+            raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
+        return self
+
+    def morph(self, at, to_morph, duration, animation=None):
         """
         Change one morphology-related state property of an active object
         :param at: when to morph (absolute time)
@@ -179,20 +200,31 @@ class SceneObject:
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
         return self
 
-    def mutate(self, at, to_mutate, animation):
+    def mutate(self, at, to_mutate, animation=None):
         """
         Change one property of an active object in a short time period like a pulse.
-        This may be conflict with morph(), treat it carefully
+        This may be conflict with morph(), treat it carefully.
         :param at: when to mutate (absolute time)
         :param to_mutate: which properties to mutate (dictionary of (property to mutate, mutate value))
         :param animation: how to mutate (Animation indicating easing and mutate_speed)
         :return:
         """
+        if self._current_state == "active":
+            # you should add a new scene object state here ↓
+
+            # you should add a new scene object state here ↑
+            print("A scene object mutates.")
+        else:
+            raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
+        return self
 
     def imitate(self, at, target):
         """
-        Current object imitates (hard_copy) the latest state of another object.
-        This is a "higher-level" action of an object, treat it carefully
+        Current object follows another object.
+        By imitating, the object forgets all previously defined actions and follow the target ones.
+        Here "follow" is not logically-true if at is smaller than the hatch time of target.
+        In such case, it is like target is "following" this object.
+        This is a "higher-level" action of an object, treat it carefully.
         :param at: when to imitate (absolute time)
         :param target: the target object to imitate (SceneObject)
         :return:
@@ -212,7 +244,15 @@ class SceneObject:
         :param at:
         :return:
         """
-        return
+        if self._current_state == "active":
+            # you should add a new scene object state here ↓
+
+            # you should add a new scene object state here ↑
+            print("A scene object destroys.")
+            self._current_state = "destroyed"
+        else:
+            raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
+        return self
 
     def to_storyboard(self):
         """
