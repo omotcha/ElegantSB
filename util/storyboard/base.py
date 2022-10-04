@@ -19,7 +19,7 @@ class Vertex:
 class Animation:
     def __init__(self):
         self.type = None
-        self.speed = "normal"
+        self.mutate_interval = 0.05
         self.easing = "linear"
 
 
@@ -79,7 +79,27 @@ class ActionPipe:
             raise (Exception("ValueError: Unexpected bisection error for time: {}".format(at)))
 
     def to_list(self):
+        """
+
+        :return:
+        """
         return list(self._pipe.values())
+
+    def get_latest_value(self, at):
+        """
+        get the latest state value before query time
+        :param at: query time
+        :return:
+        """
+        if at < self._hatch_time or at >= MAX_PIPE_TIME:
+            raise (Exception("ValueError: Invalid query time: {}".format(at)))
+        key_list = list(self._pipe.keys())
+        bi = bisect_right(key_list, at)
+        if bi:
+            key = key_list[bi-1]
+            return self._pipe[key][2]
+        else:
+            raise (Exception("ValueError: Unexpected bisection error for time: {}".format(at)))
 
 
 if __name__ == '__main__':
@@ -88,3 +108,4 @@ if __name__ == '__main__':
     opacity_pipe.add(at=20, duration=10, value=0, easing="easeOutCube")
     opacity_pipe.add(at=11, duration=9, value=0.5, easing="linear")
     print(opacity_pipe.to_list())
+    print(opacity_pipe.get_latest_value(at=21))

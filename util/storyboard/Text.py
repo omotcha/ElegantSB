@@ -186,12 +186,12 @@ class Text(SceneObject):
 
             if pivot is not None:
                 if axis != "x":
-                    prop = "pivot_y".format(axis)
+                    prop = "pivot_y"
                     if prop not in self._actions.keys():
                         self._actions[prop] = ActionPipe(self._hatch_time, pivot)
                     self._actions[prop].add(at, duration=duration, value=pivot, easing=easing)
                 if axis != "y":
-                    prop = "pivot_x".format(axis)
+                    prop = "pivot_x"
                     if prop not in self._actions.keys():
                         self._actions[prop] = ActionPipe(self._hatch_time, pivot)
                     self._actions[prop].add(at, duration=duration, value=pivot, easing=easing)
@@ -225,6 +225,50 @@ class Text(SceneObject):
                         if k not in self._actions.keys():
                             self._actions[k] = ActionPipe(self._hatch_time, to_morph[k])
                         self._actions[k].add(at, duration=duration, value=to_morph[k], easing=easing)
+
+                else:
+                    raise (Exception("ParameterError: to_morph should be a dictionary."))
+            else:
+                print("Warning: Nothing to morph")
+                return self
+        else:
+            raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
+        return self
+
+    def mutate(self, at, to_mutate, animation=None):
+        """
+        Change one property of an active object in a short time period like a pulse.
+        This may be conflict with morph() cuz they may write on same action pipe, treat it carefully
+        :param at: when to mutate (absolute time)
+        :param to_mutate: which properties to mutate (dictionary of (property to mutate, mutate value))
+        :param animation: animation: how to mutate (Animation indicating easing and mutate_interval)
+        :return:
+        """
+        if self._current_state == "active":
+            if at < 0:
+                raise (Exception("ValueError: Time should be greater than 0, but have {}.".format(at)))
+
+            easing = animation.easing if animation is not None else "linear"
+            mutate_interval = animation.mutate_interval if animation is not None else 0.05
+
+            if to_mutate is not None:
+                if isinstance(to_mutate, dict):
+                    for k in to_mutate.keys():
+                        if k not in morphable_props + movable_props + scalable_props + rotatable_props:
+                            raise (Exception("KeyError: Key {} cannot be used for mutating.".format(k)))
+
+                    for k in to_mutate.keys():
+                        if k not in self._actions.keys():
+                            raise (Exception("LogicError: A property should be declared before doing mutation"))
+                        val_retrieve = self._actions[k].get_latest_value(at - mutate_interval)
+                        self._actions[k].add(at - mutate_interval,
+                                             duration=mutate_interval,
+                                             value=to_mutate[k],
+                                             easing=easing)
+                        self._actions[k].add(at,
+                                             duration=mutate_interval,
+                                             value=val_retrieve,
+                                             easing=easing)
 
                 else:
                     raise (Exception("ParameterError: to_morph should be a dictionary."))
@@ -294,10 +338,10 @@ class Text(SceneObject):
 
 
 if __name__ == '__main__':
-    linearAnimation = Animation()
     inSineAnimation = Animation()
     inSineAnimation.easing = "easeInSine"
-    elegantTxt = Text("elegant").hatch(at=10, to=(50, 50), init={"color": "#F00", "opacity": 0})\
-                                .morph(at=11, to_morph={"opacity": 1}, duration=1, animation=linearAnimation)\
-                                .move(at=11, to=(100, 200), duration=10, animation=inSineAnimation)
+    elegantTxt = Text("elegant").hatch(at=10, to=(50, 50), init={"color": "#F00", "opacity": 0, "scale": 1})\
+                                .morph(at=11, to_morph={"opacity": 1}, duration=1)\
+                                .move(at=11, to=(100, 200), duration=10, animation=inSineAnimation)\
+                                .mutate(at=20, to_mutate={"scale": 2}, animation=inSineAnimation)
     print(elegantTxt.to_storyboard())

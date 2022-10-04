@@ -54,6 +54,12 @@ class ChartAnalyzer:
                     self._chart.tempo_list[cur_tempo_id - 1].value / 1000000 / self._chart.time_base
         return abs_time
 
+    def get_note_times(self):
+        return [self.get_time(query=i, by="note_id") for i in range(self._chart.get_note_num())]
+
+    def get_page_times(self):
+        return [self.get_time(query=i, by="page_id") for i in range(self._chart.get_page_num())]
+
     def get_page_id_by_time(self, abs_time):
         """
         figure out the page id from absolute time

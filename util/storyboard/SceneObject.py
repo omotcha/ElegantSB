@@ -203,10 +203,10 @@ class SceneObject:
     def mutate(self, at, to_mutate, animation=None):
         """
         Change one property of an active object in a short time period like a pulse.
-        This may be conflict with morph(), treat it carefully.
+        This may be conflict with morph() cuz they may write on same action pipe, treat it carefully
         :param at: when to mutate (absolute time)
         :param to_mutate: which properties to mutate (dictionary of (property to mutate, mutate value))
-        :param animation: how to mutate (Animation indicating easing and mutate_speed)
+        :param animation: how to mutate (Animation indicating easing and mutate_interval)
         :return:
         """
         if self._current_state == "active":
