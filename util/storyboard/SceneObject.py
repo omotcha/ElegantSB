@@ -107,14 +107,12 @@ class SceneObject:
         """
         Create an object.
         self._id is a unique id of an object
-        self._states is a list of dictionaries that hold states of all modified properties with respect to time
         self._current_state is the object lifecycle state
         self._hatch_time is when the object is hatched
         self._actions is the dictionary of action pipelines
         self._delay is used when imitating
         """
         self._id = str(id(self))
-        self._states = []
         self._current_state = "egg"
         self._hatch_time = 0
         self._actions = {}
@@ -301,7 +299,7 @@ class SceneObject:
                 else:
                     raise (Exception("ParameterError: to_morph should be a dictionary."))
             else:
-                print("Warning: Nothing to morph")
+                print("Warning: Nothing to morph.")
                 return self
         else:
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
@@ -344,9 +342,9 @@ class SceneObject:
                                              easing=easing)
 
                 else:
-                    raise (Exception("ParameterError: to_morph should be a dictionary."))
+                    raise (Exception("ParameterError: to_mutate should be a dictionary."))
             else:
-                print("Warning: Nothing to morph")
+                print("Warning: Nothing to mutate.")
                 return self
         else:
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))

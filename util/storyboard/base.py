@@ -10,10 +10,10 @@ MAX_PIPE_TIME = 10000
 
 
 class Vertex:
-    def __init__(self):
-        self.x = 0  # stageX coord sys
-        self.y = 0  # stageY coord sys
-        self.z = 0  # depth coord sys
+    def __init__(self, x, y, z=None):
+        self.x = x  # stageX coord sys
+        self.y = y  # stageY coord sys
+        self.z = 0 if z is None else z  # depth coord sys
 
 
 class Animation:
