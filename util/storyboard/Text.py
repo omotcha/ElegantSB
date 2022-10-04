@@ -4,9 +4,7 @@ env: any
 name: Text.py
 text object and its state
 """
-from util.storyboard.base import *
 from util.storyboard.SceneObject import *
-from copy import deepcopy
 
 
 class TextState(SceneObjectState):
@@ -32,12 +30,6 @@ class TextState(SceneObjectState):
         ret["align"] = self.align
         ret["letter_spacing"] = self.letter_spacing
         ret["font_weight"] = self.font_weight
-        return ret
-
-    def init(self):
-        ret = {}
-        for prop in self._morphable_props + self._scalable_props + self._settable_props + self._rotatable_props:
-            ret[prop] = self.__getattribute__(prop)
         return ret
 
 
@@ -131,16 +123,3 @@ class Text(SceneObject):
                     })
                 ret.append(dic)
         return ret
-
-
-if __name__ == '__main__':
-    inSineAnimation = Animation()
-    inSineAnimation.easing = "easeInSine"
-    elegantTxt = Text("elegant").hatch(at=10, to=(50, 50), init={"color": "#F00", "opacity": 0, "scale": 1})\
-                                .morph(at=11, to_morph={"opacity": 1}, duration=1)\
-                                .move(at=11, to=(100, 200), duration=10, animation=inSineAnimation)\
-                                .mutate(at=20, to_mutate={"scale": 2}, animation=inSineAnimation)
-
-    anotherTxt = Text("storyboarding").imitate(at=33, target=elegantTxt)
-    print(elegantTxt.to_storyboard())
-    print(anotherTxt.to_storyboard())

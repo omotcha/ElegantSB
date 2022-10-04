@@ -4,9 +4,7 @@ env: any
 name: Sprite.py
 sprite object and its state
 """
-from util.storyboard.base import *
 from util.storyboard.SceneObject import *
-from copy import deepcopy
 
 
 class SpriteState(SceneObjectState):
@@ -28,12 +26,6 @@ class SpriteState(SceneObjectState):
         ret = super().to_dict()
         ret["color"] = self.color
         ret["preserve_aspect"] = self.preserve_aspect
-        return ret
-
-    def init(self):
-        ret = {}
-        for prop in self._morphable_props + self._scalable_props + self._settable_props + self._rotatable_props:
-            ret[prop] = self.__getattribute__(prop)
         return ret
 
 

@@ -91,6 +91,12 @@ class SceneObjectState:
         }
         return ret
 
+    def init(self):
+        ret = {}
+        for prop in self._morphable_props + self._scalable_props + self._settable_props + self._rotatable_props:
+            ret[prop] = self.__getattribute__(prop)
+        return ret
+
 
 class SceneObject:
     """
