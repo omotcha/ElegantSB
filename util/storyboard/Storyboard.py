@@ -5,6 +5,7 @@ name: Storyboard.py
 storyboard and member objects
 """
 from util.storyboard.Text import Text
+from util.storyboard.Sprite import Sprite
 import json
 
 
@@ -26,6 +27,8 @@ class StoryBoard:
         """
         if isinstance(obj, Text):
             self.texts.append(obj)
+        elif isinstance(obj, Sprite):
+            self.sprites.append(obj)
         else:
             raise (Exception("Error: Object type not supported."))
 
@@ -41,7 +44,10 @@ class StoryBoard:
                 for state in text.to_storyboard():
                     ret["texts"].append(state)
         if len(self.sprites) > 0:
-            ret["sprites"] = [i.to_dict() for i in self.sprites]
+            ret["sprites"] = []
+            for sprite in self.sprites:
+                for state in sprite.to_storyboard():
+                    ret["sprites"].append(state)
         if len(self.lines) > 0:
             ret["lines"] = [i.to_dict() for i in self.lines]
         if len(self.videos) > 0:

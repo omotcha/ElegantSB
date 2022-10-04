@@ -7,7 +7,7 @@ this is the programming interface in Iter1
 import os
 from configs.config import example_dir
 from util.chart.analyzer import ChartAnalyzer
-from util.storyboard.Text import Text
+from util.storyboard.Text import *
 from util.storyboard.base import Animation
 from util.storyboard.Storyboard import StoryBoard
 
@@ -58,8 +58,8 @@ def assemble():
     my_storyboard.add(nhelv_text)
 
     # Now we can try another text that imitates the previous one
-    # As default, these two text overlap with each other for they have some x,y
-    # Here we use a simple trick: move down the new text at the same time with 0 duration
+    # As default, these two text overlap with each other for they have the same x and y
+    # Here we use a simple trick: move down the new text at the same time of imitation with 0 duration
     sltrm_text = Text(r"SilentRoom").imitate(at=t[19], target=nhelv_text).move(at=t[19], to=(0, -150), duration=0)
     sltrm_text.destroy(at=t[100])
 
