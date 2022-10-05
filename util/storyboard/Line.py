@@ -275,26 +275,29 @@ class LineSegments:
         Parse pipes to states then to storyboard objects
         :return:
         """
-        hatch_state = LineSegmentsState(self._hatch_time, self._actions["pos"].to_list()[0][2])
-        following_states = {}
 
+        following_states = {}
         for prop, pipe in self._actions.items():
             pipe = pipe.to_list()
-            first_action = pipe[0]
-            setattr(hatch_state, prop, first_action[2])
-            for i in range(1, len(pipe)):
+            for i in range(len(pipe)):
                 if pipe[i][0] not in following_states.keys():
-                    following_states[pipe[i][0]] = LineSegmentsState(pipe[i][0], self._actions["pos"]
-                                                                     .get_latest_value(at=pipe[i][0]))
-                setattr(following_states[pipe[i][0]], prop, pipe[i-1][2])
+                    following_states[pipe[i][0]] = 0
                 if pipe[i][1] not in following_states.keys():
-                    following_states[pipe[i][1]] = LineSegmentsState(pipe[i][1], self._actions["pos"]
-                                                                     .get_latest_value(at=pipe[i][1]))
-                setattr(following_states[pipe[i][1]], prop, pipe[i][2])
-        ret = hatch_state.to_dict()
+                    following_states[pipe[i][1]] = 0
+        for t in following_states.keys():
+            following_states[t] = {}
+            for prop, pipe in self._actions.items():
+                following_states[t][prop] = pipe.get_latest_value(at=t)
+            following_states[t]["pos"] = [{"x": i.x, "y": i.y} for i in following_states[t]["pos"]]
+        ret = {"time": self._hatch_time}
+        for k, v in following_states[self._hatch_time].items():
+            ret[k] = v
         ret["states"] = []
-        for v in following_states.values():
-            ret["states"].append(v.to_dict())
+        following_states.pop(self._hatch_time)
+        for t in following_states.keys():
+            following_states[t]["time"] = t
+            ret["states"].append(following_states[t])
+
         return ret
 
 
@@ -302,9 +305,9 @@ if __name__ == '__main__':
     my_pos = [Vertex(x=-2, y=1), Vertex(x=2, y=1)]
     my_init = {
         "opacity": 1,
-        "color": "#FFF",
+        "color": "#F00",
         "width": 0.05,
     }
     line = LineSegments().hatch(at=10, pos=my_pos, init=my_init)\
-        .morph(at=11, to_morph={"opacity": 0}, duration=1)
+        .morph(at=10, to_morph={"opacity": 0}, duration=1)
     print(line.to_storyboard())

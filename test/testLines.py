@@ -14,21 +14,26 @@ from util.storyboard.Storyboard import StoryBoard
 
 
 def test():
-    my_storyboard = StoryBoard()
+    storyboard = StoryBoard()
     analyzer = ChartAnalyzer(os.path.join(example_dir, "nhelv.json"))
     t = analyzer.get_note_times()
-    init_pos = [Vertex(x=-2, y=0.5), Vertex(x=2, y=0.5)]
-    init = {
-        "opacity": 1,
-        "color": "#FFFFFF",
-        "width": 0.3,
-    }
-    sample_line = LineSegments().hatch(at=t[271]-0.05, pos=init_pos, init=init)\
-        .morph(at=t[271], to_morph={"opacity": 0}, duration=1)\
-        .move(at=t[271], shift=(0, -1/8), duration=0.2)
-
-    my_storyboard.add(sample_line)
-    print(my_storyboard.parse())
+    for i in range(16):
+        init_pos = [Vertex(x=-1.5, y=1-i/16), Vertex(x=1.5, y=1-i/16)]
+        color = str(hex(220-i*7))[2:].upper()
+        init = {
+            "opacity": 1,
+            "color": "#FF{}{}".format(color, color),
+            "width": 0.05,
+        }
+        new_pos = [Vertex(x=0.8, y=2), Vertex(x=0.8, y=-2)]
+        sample_line = LineSegments().hatch(at=t[271+i]-0.05, pos=init_pos, init=init) \
+            .morph(at=t[271+i], to_morph={"opacity": 1}, duration=0.35) \
+            .move(at=t[271+i], shift=(0, -1 / 16), duration=0.35)\
+            .morph(at=t[271+i]+0.35, to_morph={"pos": new_pos, "color": "#FFFFFF"}, duration=0.35)\
+            .move(at=t[271+i]+0.7, shift=(0.5, 0), duration=0.35-i/100)\
+            .destroy(at=t[271+i]+1.1)
+        storyboard.add(sample_line)
+    print(storyboard.parse())
 
 
 if __name__ == '__main__':
