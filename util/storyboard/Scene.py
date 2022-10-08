@@ -7,6 +7,10 @@ scene state (controllers)
 
 
 class SceneState:
+    """
+    SceneState is large and should be divided and limited maybe, so it actually serves as nothing.
+    So better not use it directly or even override it.
+    """
     def __init__(self, time, easing="linear"):
         """
 
@@ -132,3 +136,69 @@ class SceneState:
 
         # tape(screen flipping)
         self.tape = False
+
+
+class SceneController:
+    """
+    [omo]tcha: SceneController just looks like an interface, of which the actions are not fully implemented.
+    So do not use it directly unless you implement it yourself.
+    """
+    def __init__(self):
+        """
+        self._id is a unique id of an object
+        self._current_state is the object lifecycle state
+            different from SceneObject, SceneController only have "hatched"/"unhatched" state
+        self._hatch_time is when the object is hatched
+        self._actions is the dictionary of action pipelines
+            different from SceneObject, SceneController's action pipelines are determined and created in __init__
+            but here initialization of action pipelines is not implemented
+            cuz SceneController should not be used directly
+        """
+        self._id = "scene_controller_" + str(id(self))
+        self._current_state = "egg"
+        self._hatch_time = 0
+        self._actions = {}
+        # you should initialize action pipelines here ↓
+
+        # you should initialize action pipelines here ↑
+
+    def hatch(self, at, to=(0, 0), init=None):
+        """
+        It should be the first action(or state change) of a scene controller.
+        After that, the scene controller's state is "active" and listens for next action
+        :param at: when to hatch (absolute time)
+        :param to: where to hatch ((x, y) in stageXY coord sys)
+        :param init: initialized state (dict)
+        :return:
+        """
+        if self._current_state == "active":
+            # you should add a new scene controller state here ↓
+
+            # you should add a new scene controller state here ↑
+            print("A scene controller hatches.")
+        else:
+            raise (Exception("ActionError: The scene controller is not active: {}.".format(self._id)))
+        return self
+
+
+class SceneOpacityState:
+    def __init__(self, time, easing="linear"):
+        """
+
+        :param time:    [omo]tcha: here I limit the functionality of time, only absolute time is used
+        :param easing:
+        """
+        # basic params
+        self.time = time  # absolute time
+        self.easing = easing  # easing
+
+        # opacity and dim
+        self.storyboard_opacity = 1  # opacity of all storyboard scene objects
+        self.ui_opacity = 1  # opacity of game ui
+        self.scanline_opacity = 1  # opacity of scanline
+        self.background_dim = 0.85  # opacity of background dim
+        self.note_opacity_multiplier = 1  # multiplier on note opacity
+
+
+class SceneOpacityController(SceneController):
+    pass

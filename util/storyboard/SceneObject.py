@@ -100,8 +100,8 @@ class SceneObjectState:
 
 class SceneObject:
     """
-    [omo]tcha: SceneObject just looks like an interface, of which the actions are not implemented.
-    So do not use it directly until you implement it yourself.
+    [omo]tcha: SceneObject just looks like an interface, of which the actions are not fully implemented.
+    So do not use it directly unless you implement it yourself.
     """
     def __init__(self):
         """

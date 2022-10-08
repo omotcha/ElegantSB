@@ -52,7 +52,7 @@ class ChartAnalyzer:
             cur_tempo_id += 1
         abs_time -= (self._chart.tempo_list[cur_tempo_id].tick - tick) * \
                     self._chart.tempo_list[cur_tempo_id - 1].value / 1000000 / self._chart.time_base
-        return round(abs_time, 3)
+        return abs_time
 
     def get_note_times(self):
         return [self.get_time(query=i, by="note_id") for i in range(self._chart.get_note_num())]
