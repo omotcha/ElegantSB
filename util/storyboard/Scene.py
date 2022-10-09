@@ -138,6 +138,10 @@ class SceneState:
         # tape(screen flipping)
         self.tape = False
 
+        self._effects = ["chromatical", "bloom", "radial_blur", "color_adjustment",
+                         "color_filter", "grey_scale", "noise", "sepia", "dream",
+                         "fisheye", "shockwave", "focus", "glitch", "arcade", "tape"]
+
 
 class SceneController:
     """
@@ -163,6 +167,31 @@ class SceneController:
 
         # [omo]tcha: here I limit some properties' ability to morph
         self._morphable_props = []
+        self._effects = ["chromatical", "bloom", "radial_blur", "color_adjustment",
+                         "color_filter", "grey_scale", "noise", "sepia", "dream",
+                         "fisheye", "shockwave", "focus", "glitch", "arcade", "tape"]
+
+    def _hatch(self, init=None):
+        """
+        Hatch function of SceneController runs in the __init__ of overridden classes
+        :param init: initialized state (dict)
+        :return:
+        """
+        if self._current_state == "egg":
+            if init is not None:
+                if isinstance(init, dict):
+                    for k in init.keys():
+                        # [omo]tcha: init can be regarded as the first morph
+                        if k not in self._morphable_props:
+                            raise (Exception("KeyError: Key {} cannot be used for initializing.".format(k)))
+                    for k in init.keys():
+                        self._actions[k] = ActionPipe(0, init[k])
+                else:
+                    raise (Exception("ParameterError: init should be a dictionary."))
+            self._current_state = "active"
+        else:
+            raise (Exception("ActionError: The object has been hatched before: {}.".format(self._id)))
+        return self
 
     def morph(self, at, to_morph, duration, animation=None):
         """
@@ -285,29 +314,7 @@ class UIController(SceneController):
         super().__init__()
         self._id = "ui_controller_" + self._id
         self._morphable_props += ["storyboard_opacity", "ui_opacity", "background_dim"]
-        self.hatch(init)
-
-    def hatch(self, init=None):
-        """
-        hatch function of UIController
-        :param init: initialized state (dict)
-        :return:
-        """
-        if self._current_state == "egg":
-            if init is not None:
-                if isinstance(init, dict):
-                    for k in init.keys():
-                        # [omo]tcha: init can be regarded as the first morph
-                        if k not in self._morphable_props:
-                            raise (Exception("KeyError: Key {} cannot be used for initializing.".format(k)))
-                    for k in init.keys():
-                        self._actions[k] = ActionPipe(0, init[k])
-                else:
-                    raise (Exception("ParameterError: init should be a dictionary."))
-            self._current_state = "active"
-        else:
-            raise (Exception("ActionError: The object has been hatched before: {}.".format(self._id)))
-        return self
+        self._hatch(init)
 
 
 class GlobalNoteController(SceneController):
@@ -322,26 +329,302 @@ class GlobalNoteController(SceneController):
         super().__init__()
         self._id = "global_note_controller" + self._id
         self._morphable_props += ["note_opacity_multiplier", "note_ring_color", "note_fill_colors"]
-        self.hatch(init)
+        self._hatch(init)
 
-    def hatch(self, init=None):
+
+class ScanlineController(SceneController):
+    """
+    ScanlineController controls properties of a scanline
+    """
+    def __init__(self, init=None):
         """
-        hatch function of GlobalNoteController
+
         :param init: initialized state (dict)
-        :return:
         """
-        if self._current_state == "egg":
-            if init is not None:
-                if isinstance(init, dict):
-                    for k in init.keys():
-                        # [omo]tcha: init can be regarded as the first morph
-                        if k not in self._morphable_props:
-                            raise (Exception("KeyError: Key {} cannot be used for initializing.".format(k)))
-                    for k in init.keys():
-                        self._actions[k] = ActionPipe(0, init[k])
-                else:
-                    raise (Exception("ParameterError: init should be a dictionary."))
-            self._current_state = "active"
+        super().__init__()
+        self._id = "scanline_controller_" + self._id
+        self._morphable_props += ["scanline_opacity", "scanline_color", "override_scanline_pos", "scanline_pos"]
+        self._hatch(init)
+
+
+class CameraController(SceneController):
+    """
+    CameraController controls properties of a camera
+    """
+    def __init__(self):
+        super().__init__()
+        self._id = "camera_controller_" + self._id
+        self._morphable_props += ["perspective", "x", "y", "z", "rot_x", "rot_y", "rot_z"]
+
+
+class PerspectiveCameraController(CameraController):
+    """
+    PerspectiveCameraController controls properties of a perspective camera
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__()
+        self._id = "perspective_" + self._id
+        self._morphable_props += ["fov"]
+        self._hatch(init)
+
+
+class OrthographicCameraController(CameraController):
+    """
+    OrthographicCameraController controls properties of an orthographic camera
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__()
+        self._id = "orthographic_" + self._id
+        self._morphable_props += ["size"]
+        self._hatch(init)
+
+
+class EffectController(SceneController):
+    """
+    CameraController controls properties of a camera
+    """
+
+    def __init__(self, effect_name):
+        """
+        init effect name
+        :param effect_name: effect name
+        """
+        super().__init__()
+        self._id = "effect_" + self._id
+        if effect_name not in self._effects:
+            raise (Exception("ParameterError: Not a valid effect name: {}".format(effect_name)))
         else:
-            raise (Exception("ActionError: The object has been hatched before: {}.".format(self._id)))
-        return self
+            self._morphable_props += [effect_name]
+
+
+class Chromatical(EffectController):
+    """
+    Chromatic aberration effect controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__("chromatical")
+        self._id = "chromatical_" + self._id
+        self._morphable_props += ["chromatical_fade", "chromatical_intensity", "chromatical_speed"]
+        self._hatch(init)
+
+
+class Bloom(EffectController):
+    """
+    Bloom effect controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__("bloom")
+        self._id = "bloom_" + self._id
+        self._morphable_props += ["bloom_intensity"]
+        self._hatch(init)
+
+
+class RadialBlur(EffectController):
+    """
+    Radial blur effect controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__("radial_blur")
+        self._id = "radial_blur_" + self._id
+        self._morphable_props += ["radial_blur_intensity"]
+        self._hatch(init)
+
+
+class ColorAdjustment(EffectController):
+    """
+    Color adjustment controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__("color_adjustment")
+        self._id = "color_adjustment_" + self._id
+        self._morphable_props += ["brightness", "saturation", "contrast"]
+        self._hatch(init)
+
+
+class ColorFilter(EffectController):
+    """
+    Screen color filter controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__("color_filter")
+        self._id = "color_filter_" + self._id
+        self._morphable_props += ["color_filter_color"]
+        self._hatch(init)
+
+
+class GreyScale(EffectController):
+    """
+    screen grey scale controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__("grey_scale")
+        self._id = "grey_scale_" + self._id
+        self._morphable_props += ["grey_scale_intensity"]
+        self._hatch(init)
+
+
+class Noise(EffectController):
+    """
+    Noise effect controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__("noise")
+        self._id = "noise_" + self._id
+        self._morphable_props += ["noise_intensity"]
+        self._hatch(init)
+
+
+class Sepia(EffectController):
+    """
+    Sepia effect controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__("sepia")
+        self._id = "sepia_" + self._id
+        self._morphable_props += ["sepia_intensity"]
+        self._hatch(init)
+
+
+class Dream(EffectController):
+    """
+    Dream effect controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__("dream")
+        self._id = "dream_" + self._id
+        self._morphable_props += ["dream_intensity"]
+        self._hatch(init)
+
+
+class Fisheye(EffectController):
+    """
+    Fisheye effect controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__("fisheye")
+        self._id = "fisheye_" + self._id
+        self._morphable_props += ["fisheye_intensity"]
+        self._hatch(init)
+
+
+class Shockwave(EffectController):
+    """
+    Shockwave effect controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__("shockwave")
+        self._id = "shockwave_" + self._id
+        self._morphable_props += ["shockwave_speed"]
+        self._hatch(init)
+
+
+class FocusLine(EffectController):
+    """
+    Manga focus line controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__("focus")
+        self._id = "focus_" + self._id
+        self._morphable_props += ["focus_size", "focus_speed", "focus_intensity", "focus_color"]
+        self._hatch(init)
+
+
+class Glitch(EffectController):
+    """
+    Glitch effect controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__("glitch")
+        self._id = "glitch_" + self._id
+        self._morphable_props += ["glitch_intensity"]
+        self._hatch(init)
+
+
+class Arcade(EffectController):
+    """
+    Arcade effect controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__("arcade")
+        self._id = "arcade_" + self._id
+        self._morphable_props += ["arcade_intensity", "arcade_interference_size",
+                                  "arcade_interference_speed", "arcade_contrast"]
+        self._hatch(init)
+
+
+class Tape(EffectController):
+    """
+    Screen tapping controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__("tape")
+        self._id = "tape_" + self._id
+        self._hatch(init)
