@@ -57,6 +57,17 @@ class NoteSelector:
         self.min_x = None  # minimum x-coord of note
         self.max_x = None  # maximum x-coord of note
 
+    def to_dict(self):
+        ret = {
+            "type": self.type,
+            "start": self.start,
+            "end": self.end,
+            "direction": self.direction,
+            "min_x": self.min_x,
+            "max_x": self.max_x
+        }
+        return ret
+
 
 class ActionPipe:
     """

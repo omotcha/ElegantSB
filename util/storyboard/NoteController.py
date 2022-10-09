@@ -4,6 +4,7 @@ env: any
 name: Scene.py
 note state (note controllers)
 """
+from util.storyboard.base import ActionPipe, NoteSelector
 
 
 class NoteState:
@@ -55,3 +56,44 @@ class NoteState:
 
         # hold style: only works on holds
         self.style = 1                          # 1 for default, 2 for VSRG effect
+
+
+class NoteController:
+    """
+    A note controller can not been destroyed
+    """
+
+    def __init__(self, target):
+        """
+        create a note controller object
+        self._notes are notes target
+        self._id is a unique id of an object
+        self._current_state is the object lifecycle state
+        self._hatch_time is when the object is hatched
+        self._actions is the dictionary of action pipelines
+        self._delay is used when imitating
+        :param target:  notes target, it can be a list of integers(note id) or a note selector object
+        """
+        if isinstance(target, list):
+            for item in target:
+                if not isinstance(item, int):
+                    raise (Exception("ParameterError: Target should be a list of integers or a note selector object."))
+            self._notes = target
+        elif isinstance(target, int):
+            self._notes = target
+        elif isinstance(target, NoteSelector):
+            self._notes = target.to_dict()
+        else:
+            raise (Exception("ParameterError: Target should be a list of integers or a note selector object."))
+
+        self._id = "note_controller_" + str(id(self))
+        self._current_state = "egg"
+        self._hatch_time = 0
+        self._actions = {}
+        self._delay = 0
+
+        # [omo]tcha: here I limit some properties' ability to morph
+        self._morphable_props = []
+        self._scalable_props = []
+        self._movable_props = []
+        self._rotatable_props = []

@@ -4,7 +4,7 @@ env: any
 name: Scene.py
 scene state (controllers)
 """
-from util.storyboard.base import ActionPipe, NoteFillColors
+from util.storyboard.base import ActionPipe
 
 
 class SceneState:
