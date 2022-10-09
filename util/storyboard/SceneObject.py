@@ -362,9 +362,9 @@ class SceneObject:
         :return:
         """
         if self._current_state == "active":
-            # you should add a new scene object state here ↓
+            # you should add a new scene object state/action here ↓
 
-            # you should add a new scene object state here ↑
+            # you should add a new scene object state/action here ↑
             print("A scene object imitates.")
         else:
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))

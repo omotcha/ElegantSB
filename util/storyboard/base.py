@@ -23,6 +23,31 @@ class Animation:
         self.easing = "linear"
 
 
+class NoteFillColors:
+
+    def __init__(self):
+        self.up_click = "#FFF"
+        self.down_click = "#FFF"
+        self.up_drag = "#FFF"
+        self.down_drag = "#FFF"
+        self.up_hold = "#FFF"
+        self.down_hold = "#FFF"
+        self.up_long_hold = "#FFF"
+        self.down_long_hold = "#FFF"
+        self.up_flick = "#FFF"
+        self.down_flick = "#FFF"
+        self.up_c_drag = "#FFF"
+        self.down_c_drag = "#FFF"
+
+    def to_list(self):
+        return [self.up_click, self.down_click,
+                self.up_drag, self.down_drag,
+                self.up_hold, self.down_hold,
+                self.up_long_hold, self.down_long_hold,
+                self.up_flick, self.down_flick,
+                self.up_c_drag, self.down_c_drag]
+
+
 class NoteSelector:
     def __init__(self):
         self.type = []  # list of acceptable note types

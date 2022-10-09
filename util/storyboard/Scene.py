@@ -4,6 +4,7 @@ env: any
 name: Scene.py
 scene state (controllers)
 """
+from util.storyboard.base import ActionPipe, NoteFillColors
 
 
 class SceneState:
@@ -142,6 +143,7 @@ class SceneController:
     """
     [omo]tcha: SceneController just looks like an interface, of which the actions are not fully implemented.
     So do not use it directly unless you implement it yourself.
+    A scene controller can only hatch, morph and mutate
     """
     def __init__(self):
         """
@@ -158,47 +160,159 @@ class SceneController:
         self._current_state = "egg"
         self._hatch_time = 0
         self._actions = {}
-        # you should initialize action pipelines here ↓
 
-        # you should initialize action pipelines here ↑
+        # [omo]tcha: here I limit some properties' ability to morph
+        self._morphable_props = []
 
-    def hatch(self, at, to=(0, 0), init=None):
+    def morph(self, at, to_morph, duration, animation=None):
         """
-        It should be the first action(or state change) of a scene controller.
-        After that, the scene controller's state is "active" and listens for next action
-        :param at: when to hatch (absolute time)
-        :param to: where to hatch ((x, y) in stageXY coord sys)
-        :param init: initialized state (dict)
+        Change one morphology-related state property of an active object
+        :param at: when to morph (absolute time)
+        :param to_morph: which properties to morph (dictionary of (property to morph, new value))
+        :param duration: how long to morph (time)
+        :param animation: how to morph (Animation)
         :return:
         """
         if self._current_state == "active":
-            # you should add a new scene controller state here ↓
+            if at < 0:
+                raise (Exception("ValueError: Time should be greater than 0, but have {}.".format(at)))
 
-            # you should add a new scene controller state here ↑
-            print("A scene controller hatches.")
+            easing = animation.easing if animation is not None else "linear"
+
+            if to_morph is not None:
+                if isinstance(to_morph, dict):
+                    for k in to_morph.keys():
+                        if k not in self._morphable_props:
+                            raise (Exception("KeyError: Key {} cannot be used for morphing.".format(k)))
+
+                    for k in to_morph.keys():
+                        if k not in self._actions.keys():
+                            self._actions[k] = ActionPipe(self._hatch_time, to_morph[k])
+                        self._actions[k].add(at, duration=duration, value=to_morph[k], easing=easing)
+
+                else:
+                    raise (Exception("ParameterError: to_morph should be a dictionary."))
+            else:
+                print("Warning: Nothing to morph.")
+                return self
         else:
-            raise (Exception("ActionError: The scene controller is not active: {}.".format(self._id)))
+            raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
+        return self
+
+    def mutate(self, at, to_mutate, animation=None):
+        """
+        Change one property of an active object in a short time period like a pulse.
+        This may be conflict with morph() cuz they may write on same action pipe, treat it carefully
+        :param at: when to mutate (absolute time)
+        :param to_mutate: which properties to mutate (dictionary of (property to mutate, mutate value))
+        :param animation: animation: how to mutate (Animation indicating easing and mutate_interval)
+        :return:
+        """
+        if self._current_state == "active":
+            if at < 0:
+                raise (Exception("ValueError: Time should be greater than 0, but have {}.".format(at)))
+
+            easing = animation.easing if animation is not None else "linear"
+            mutate_interval = animation.mutate_interval if animation is not None else 0.05
+
+            if to_mutate is not None:
+                if isinstance(to_mutate, dict):
+                    for k in to_mutate.keys():
+                        if k not in self._morphable_props:
+                            raise (Exception("KeyError: Key {} cannot be used for mutating.".format(k)))
+
+                    for k in to_mutate.keys():
+                        if k not in self._actions.keys():
+                            raise (Exception("LogicError: A property should be declared before doing mutation"))
+                        val_retrieve = self._actions[k].get_latest_value(at - mutate_interval)
+                        self._actions[k].add(at - mutate_interval,
+                                             duration=mutate_interval,
+                                             value=to_mutate[k],
+                                             easing=easing)
+                        self._actions[k].add(at,
+                                             duration=mutate_interval,
+                                             value=val_retrieve,
+                                             easing=easing)
+
+                else:
+                    raise (Exception("ParameterError: to_mutate should be a dictionary."))
+            else:
+                print("Warning: Nothing to mutate.")
+                return self
+        else:
+            raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
         return self
 
 
-class SceneOpacityState:
-    def __init__(self, time, easing="linear"):
+class UIController(SceneController):
+    """
+    UIController controls overall storyboard/background/ui elements, it does not control notes/scanline
+    """
+    def __init__(self, init=None):
         """
 
-        :param time:    [omo]tcha: here I limit the functionality of time, only absolute time is used
-        :param easing:
+        :param init: initialized state (dict)
         """
-        # basic params
-        self.time = time  # absolute time
-        self.easing = easing  # easing
+        super().__init__()
+        self._id = "ui_controller_" + self._id
+        self._morphable_props += ["storyboard_opacity", "ui_opacity", "background_dim"]
+        self.hatch(init)
 
-        # opacity and dim
-        self.storyboard_opacity = 1  # opacity of all storyboard scene objects
-        self.ui_opacity = 1  # opacity of game ui
-        self.scanline_opacity = 1  # opacity of scanline
-        self.background_dim = 0.85  # opacity of background dim
-        self.note_opacity_multiplier = 1  # multiplier on note opacity
+    def hatch(self, init=None):
+        """
+        hatch function of UIController
+        :param init: initialized state (dict)
+        :return:
+        """
+        if self._current_state == "egg":
+            if init is not None:
+                if isinstance(init, dict):
+                    for k in init.keys():
+                        # [omo]tcha: init can be regarded as the first morph
+                        if k not in self._morphable_props:
+                            raise (Exception("KeyError: Key {} cannot be used for initializing.".format(k)))
+                    for k in init.keys():
+                        self._actions[k] = ActionPipe(0, init[k])
+                else:
+                    raise (Exception("ParameterError: init should be a dictionary."))
+            self._current_state = "active"
+        else:
+            raise (Exception("ActionError: The object has been hatched before: {}.".format(self._id)))
+        return self
 
 
-class SceneOpacityController(SceneController):
-    pass
+class GlobalNoteController(SceneController):
+    """
+    GlobalNoteController controls overall note color and opacity, it can be overridden by note controller
+    """
+    def __init__(self, init=None):
+        """
+
+        :param init: initialized state (dict)
+        """
+        super().__init__()
+        self._id = "global_note_controller" + self._id
+        self._morphable_props += ["note_opacity_multiplier", "note_ring_color", "note_fill_colors"]
+        self.hatch(init)
+
+    def hatch(self, init=None):
+        """
+        hatch function of GlobalNoteController
+        :param init: initialized state (dict)
+        :return:
+        """
+        if self._current_state == "egg":
+            if init is not None:
+                if isinstance(init, dict):
+                    for k in init.keys():
+                        # [omo]tcha: init can be regarded as the first morph
+                        if k not in self._morphable_props:
+                            raise (Exception("KeyError: Key {} cannot be used for initializing.".format(k)))
+                    for k in init.keys():
+                        self._actions[k] = ActionPipe(0, init[k])
+                else:
+                    raise (Exception("ParameterError: init should be a dictionary."))
+            self._current_state = "active"
+        else:
+            raise (Exception("ActionError: The object has been hatched before: {}.".format(self._id)))
+        return self
