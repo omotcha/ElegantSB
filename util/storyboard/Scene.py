@@ -243,6 +243,35 @@ class SceneController:
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
         return self
 
+    def to_storyboard(self):
+        """
+        Parse object to storyboard object, do not use it directly
+        :return:
+        """
+        ret = []
+        for prop, pipe in self._actions.items():
+            pipe = pipe.to_list()
+            dic = {
+                "states": [{
+                    "time": pipe[0][0],
+                    prop: pipe[0][2],
+                    "easing": pipe[0][3]
+                }]
+            }
+            for i in range(1, len(pipe)):
+                dic["states"].append({
+                    "time": pipe[i][0],
+                    prop: pipe[i-1][2],
+                    "easing": pipe[i][3]
+                })
+                dic["states"].append({
+                    "time": pipe[i][1],
+                    prop: pipe[i][2],
+                    "easing": pipe[i-1][3]
+                })
+            ret.append(dic)
+        return ret
+
 
 class UIController(SceneController):
     """

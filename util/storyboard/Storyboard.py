@@ -8,6 +8,7 @@ from util.storyboard.Text import Text
 from util.storyboard.Sprite import Sprite
 from util.storyboard.Video import Video
 from util.storyboard.Line import LineSegments
+from util.storyboard.Scene import SceneController
 import json
 
 
@@ -35,6 +36,8 @@ class StoryBoard:
             self.videos.append(obj)
         elif isinstance(obj, LineSegments):
             self.lines.append(obj)
+        elif isinstance(obj, SceneController):
+            self.controllers.append(obj)
         else:
             raise (Exception("Error: Object type not supported."))
 
@@ -65,7 +68,10 @@ class StoryBoard:
                 for state in video.to_storyboard():
                     ret["videos"].append(state)
         if len(self.controllers) > 0:
-            ret["controllers"] = [i.to_dict() for i in self.controllers]
+            ret["controllers"] = []
+            for controller in self.controllers:
+                for state in controller.to_storyboard():
+                    ret["controllers"].append(state)
         if len(self.note_controllers) > 0:
             ret["note_controllers"] = [i.to_dict() for i in self.note_controllers]
         if len(self.templates) > 0:
