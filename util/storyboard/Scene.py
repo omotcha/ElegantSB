@@ -356,6 +356,10 @@ class CameraController(SceneController):
         self._id = "camera_controller_" + self._id
         self._morphable_props += ["perspective", "x", "y", "z", "rot_x", "rot_y", "rot_z"]
 
+        # [omo]tcha: the coordinate system type of camera, default: camera
+        # not settable
+        self._coord_sys = "camera"
+
 
 class PerspectiveCameraController(CameraController):
     """

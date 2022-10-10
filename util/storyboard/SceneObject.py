@@ -125,6 +125,10 @@ class SceneObject:
         self._movable_props = ["x", "y"]
         self._rotatable_props = ["rot_x", "rot_y", "rot_z"]
 
+        # [omo]tcha: the coordinate system type of scene object, default: stage
+        # not settable
+        self._coord_sys = "stage"
+
     def hatch(self, at, to=(0, 0), init=None):
         """
         It should be the first action(or state change) of an object.
