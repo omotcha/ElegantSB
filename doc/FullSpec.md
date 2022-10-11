@@ -15,6 +15,8 @@ or [Full Specification of Storyboarding](https://www.notion.so/Full-Specificatio
 
 ### Basic Concepts
 
+![logic structure of ESB](./ESB.StructureDiagram.png)
+
 - __States__: If we model a storyboard element as an "object", such as a Text object, we can easily know that an object has its properties, and different types of objects may have different property members. In storyboarding, the objects' properties are subject to time. An object may have different "slices" of properties at different time. We call them "states". States are all that we considered, designed and struggled with when storyboarding.
 - __Actions__: Similar with the concept in state machines. Actions are what we actually want to do to an object in a time period. An action results in some state changes. In storyboarding, property value at a certain time can be calculated by easing. Similarly, here action can be simply regarded as two states: state at `start_time` and state at `end_time`.
 - __Lifecycle__: For "easy" understanding and modeling the nature of an object, in ESB we imagine an object as a creature. After being created, it is an egg, inactive and need to be hatched. Hatching is like initialization. _P.S. It is necessary for line objects to have some properties initialized before `state` (JSON list)._ After being hatched, the creature is active now and can perform other base actions: Move, Rotate, Scale, Morph, Mutate, Imitate and Destroy and more complicated actions based on these. I will explain them later. Once we destroy this object, this creature is no longer active. This is the same in `destroy()` in storyboarding.
