@@ -67,7 +67,7 @@ class NoteController:
     def __init__(self, target, coord_sys="note"):
         """
         create a note controller object
-        self._notes is a single or a list of note ids
+        self._notes is  a list of note ids
         self._id is a unique id of an object
         self._current_state is the object lifecycle state
         self._hatch_time is when the object is hatched
@@ -115,6 +115,7 @@ class NoteController:
 
     def hatch(self, at, init=None):
         """
+        The concept of note controller is more alike note, therefore it has hatch function
         It should be the first action(or state change) of an object.
         After that, the object's state is "active" and listens for next action
         :param at: when to hatch (absolute time)
@@ -133,8 +134,12 @@ class NoteController:
                             raise (Exception("KeyError: Key {} cannot be used for initializing.".format(k)))
                     for k in init.keys():
                         self._actions[k] = ActionPipe(at, init[k])
-                        if k in self._lockable_props:
-                            self._actions["override_" + k] = ActionPipe(at, True)
+                    for k in self._switchable_props:
+                        # [omo]tcha: in note controllers, all switchable properties start with "override_"
+                        if k.split("_")[1] in init.keys():
+                            self._switches[k] = SwitchPipe(at, True)
+                        else:
+                            self._switches[k] = SwitchPipe(at, False)
                 else:
                     raise (Exception("ParameterError: init should be a dictionary."))
             self._current_state = "active"
@@ -165,15 +170,13 @@ class NoteController:
             if to[0] is not None:
                 if "x" not in self._actions.keys():
                     self._actions["x"] = ActionPipe(self._hatch_time, to[0])
-                    self._actions["override_x"] = ActionPipe(self._hatch_time, False)
-                    self._actions["override_x"].add(at, duration=duration, value=True, easing=easing)
+                self._switches["override_x"].add(at, value=True)
                 self._actions["x"].add(at, duration=duration, value=to[0], easing=easing)
 
             if to[1] is not None:
                 if "y" not in self._actions.keys():
                     self._actions["y"] = ActionPipe(self._hatch_time, to[1])
-                    self._actions["override_y"] = ActionPipe(self._hatch_time, False)
-                    self._actions["override_y"].add(at, duration=duration, value=True, easing=easing)
+                self._switches["override_y"].add(at, value=True)
                 self._actions["y"].add(at, duration=duration, value=to[1], easing=easing)
 
         else:
@@ -203,8 +206,7 @@ class NoteController:
             prop = "rot_{}".format(axis)
             if prop not in self._actions.keys():
                 self._actions[prop] = ActionPipe(self._hatch_time, degree)
-                self._actions["override_" + prop] = ActionPipe(self._hatch_time, False)
-                self._actions["override_" + prop].add(at, duration=duration, value=True, easing=easing)
+            self._switches["override_" + prop].add(at, value=True)
             self._actions[prop].add(at, duration=duration, value=degree, easing=easing)
 
             # [omo]tcha: seems pivots are not settable
@@ -280,9 +282,8 @@ class NoteController:
                     for k in to_morph.keys():
                         if k not in self._actions.keys():
                             self._actions[k] = ActionPipe(self._hatch_time, to_morph[k])
-                            if k in ["ring_color", "fill_color"]:
-                                self._actions["override_" + k] = ActionPipe(self._hatch_time, False)
-                                self._actions["override_" + k].add(at, duration=duration, value=True, easing=easing)
+                        if k in ["ring_color", "fill_color"]:
+                            self._switches["override_" + k].add(at, value=True)
                         self._actions[k].add(at, duration=duration, value=to_morph[k], easing=easing)
 
                 else:
@@ -358,6 +359,7 @@ class NoteController:
         if not isinstance(target, NoteController):
             raise (Exception("TypeError: Imitation between different species is not supported."))
         self._actions = target.copy_actions()
+        self._switches = target.copy_switches()
         self._delay = at - target.get_hatch_time()
         return self
 
@@ -370,50 +372,96 @@ class NoteController:
             ret[k] = deepcopy(v)
         return ret
 
-    def lock(self, prop, at):
+    def copy_switches(self):
+        ret = {}
+        for k, v in self._switches.items():
+            ret[k] = deepcopy(v)
+        return ret
+
+    def enable(self, prop, at):
         """
-        lock a property at some time, it is implemented as a mutation on a lockable property's lock
-        :param at: time to lock
-        :param prop: property to lock
+        set a switchable property to true at some time
+        :param prop: property
+        :param at: absolute time
         :return:
         """
-        if self._current_state == "active":
-            if at < 0:
-                raise (Exception("ValueError: Time should be greater than 0, but have {}.".format(at)))
+        if at < 0:
+            raise (Exception("ValueError: Time should be greater than 0, but have {}.".format(at)))
+        if prop not in self._switchable_props:
+            raise (Exception("ValueError: Property {} is not switchable".format(prop)))
+        if prop not in self._switches.keys():
+            self._switches[prop] = SwitchPipe(at, True)
+        else:
+            self._switches[prop].add(at, True)
+        return self
 
-            easing = "linear"
-            mutate_interval = 0.01
-            if prop in self._lockable_props:
-                if prop not in self._actions.keys():
-                    raise (Exception("LogicError: The property cannot be locked before it hatches."))
-                k = "override_" + prop
-                self._actions[k].add(at,
-                                     duration=mutate_interval,
-                                     value=False,
-                                     easing=easing)
-            else:
-                raise (Exception("ParameterError: The property {} is not lockable.".format(prop)))
-
-    def unlock(self, prop, at):
+    def disable(self, prop, at):
         """
-        unlock a property at some time, it is implemented as a mutation on a lockable property's lock
-        :param at: time to unlock
-        :param prop: property to unlock
+        set a switchable property to false at some time
+        :param prop: property
+        :param at: absolute time
         :return:
         """
-        if self._current_state == "active":
-            if at < 0:
-                raise (Exception("ValueError: Time should be greater than 0, but have {}.".format(at)))
+        if at < 0:
+            raise (Exception("ValueError: Time should be greater than 0, but have {}.".format(at)))
+        if prop not in self._switchable_props:
+            raise (Exception("ValueError: Property {} is not switchable".format(prop)))
+        if prop not in self._switches.keys():
+            self._switches[prop] = SwitchPipe(at, False)
+        else:
+            self._switches[prop].add(at, False)
+        return self
 
-            easing = "linear"
-            mutate_interval = 0.01
-            if prop in self._lockable_props:
-                if prop not in self._actions.keys():
-                    raise (Exception("LogicError: The property cannot be unlocked before it hatches."))
-                k = "override_" + prop
-                self._actions[k].add(at,
-                                     duration=mutate_interval,
-                                     value=True,
-                                     easing=easing)
-            else:
-                raise (Exception("ParameterError: The property {} is not lockable.".format(prop)))
+    def to_storyboard(self):
+        """
+        Parse object to storyboard object
+        :return:
+        """
+        ret = []
+        for prop, action_pipe in self._actions.items():
+            action_pipe = action_pipe.to_list()
+            prop_dic = {
+                "note": self._notes,
+                "states": []
+            }
+            prop_states = {
+                action_pipe[0][0]: {
+                    "time": action_pipe[0][0],
+                    prop: "stage{}:{}".format(prop.upper(), action_pipe[0][2])
+                    if prop in ["x", "y"] and self._coord_sys == "stage" else action_pipe[0][2],
+                    "easing": action_pipe[0][3]
+                }
+            }
+            for i in range(1, len(action_pipe)):
+                prop_states[action_pipe[i][0] + self._delay] = {
+                    "time": action_pipe[i][0] + self._delay,
+                    prop: action_pipe[i - 1][2]
+                    if prop in ["x", "y"] and self._coord_sys == "stage" else action_pipe[0][2],
+                    "easing": action_pipe[i][3]
+                }
+                prop_states[action_pipe[i][1] + self._delay] = {
+                    "time": action_pipe[i][1] + self._delay,
+                    prop: action_pipe[i][2]
+                    if prop in ["x", "y"] and self._coord_sys == "stage" else action_pipe[0][2],
+                    "easing": action_pipe[i - 1][3]
+                }
+
+            if "override_" + prop in self._switchable_props:
+                switch_pipe = self._switches["override_" + prop].to_list()
+                for state in switch_pipe:
+                    if state[0] + self._delay in prop_states.keys():
+                        prop_states[state[0]+self._delay]["override_"+prop] = state[1]
+                    else:
+                        prop_states[state[0] + self._delay] = {
+                            "time": state[0]+self._delay,
+                            "override_" + prop: state[1]
+                        }
+            for state in prop_states.values():
+                prop_dic["states"].append(state)
+            ret.append(prop_dic)
+        return ret
+
+
+if __name__ == '__main__':
+    nc = NoteController(target=[1, 2], coord_sys="note").hatch(at=1, init={"x": 0.5}).disable("override_x", 10)
+    print(nc.to_storyboard())

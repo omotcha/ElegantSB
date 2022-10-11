@@ -324,7 +324,7 @@ class SceneController:
 
     def to_storyboard(self):
         """
-        Parse object to storyboard object, do not use it directly
+        Parse object to storyboard object
         :return:
         """
         ret = []
