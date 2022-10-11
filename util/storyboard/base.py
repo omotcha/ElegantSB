@@ -138,10 +138,70 @@ class ActionPipe:
             raise (Exception("ValueError: Unexpected bisection error for time: {}".format(at)))
 
 
+class SwitchPipe:
+    """
+    [omo]tcha: SwitchPipe is a dictionary to store and manage states of switches.
+    Here switch is minimized upon a single property.
+    SwitchPipe maintains a dictionary (time:value of property)
+    """
+    def __init__(self, hatch_time, hatch_value):
+        """
+        The first action should be "hatch" action
+        :param hatch_time:
+        :param hatch_value:
+        """
+        if hatch_time < 0 or hatch_time >= MAX_PIPE_TIME:
+            raise (Exception("ValueError: Invalid hatch time: {}".format(hatch_time)))
+        self._pipe = {hatch_time: hatch_value}
+        self._hatch_time = hatch_time
+
+    def add(self, at, value):
+        """
+        Add a state to the pipe
+        :param at: absolute time
+        :param value: value of property
+        :return:
+        """
+        if at < self._hatch_time or at >= MAX_PIPE_TIME:
+            raise (Exception("ValueError: Invalid time: {}".format(at)))
+        key_list = list(self._pipe.keys())
+        if at in self._pipe.keys():
+            print("Warning: Time already exists in current switch pipe, the value would be overridden by the new one.")
+        self._pipe[at] = value
+
+    def to_list(self):
+        """
+
+        :return:
+        """
+        return list(self._pipe.items())
+
+    def get_latest_value(self, at):
+        """
+        get the latest state value before query time
+        :param at: query time
+        :return:
+        """
+        if at < self._hatch_time or at >= MAX_PIPE_TIME:
+            raise (Exception("ValueError: Invalid query time: {}".format(at)))
+        key_list = list(self._pipe.keys())
+        bi = bisect_right(key_list, at)
+        if bi:
+            key = key_list[bi-1]
+            return self._pipe[key]
+        else:
+            raise (Exception("ValueError: Unexpected bisection error for time: {}".format(at)))
+
+
 if __name__ == '__main__':
     opacity_pipe = ActionPipe(hatch_time=0, hatch_value=0)
     opacity_pipe.add(at=1, duration=10, value=1, easing="easeInCube")
     opacity_pipe.add(at=20, duration=10, value=0, easing="easeOutCube")
     opacity_pipe.add(at=11, duration=9, value=0.5, easing="linear")
-    print(opacity_pipe.to_list())
-    print(opacity_pipe.get_latest_value(at=21))
+
+    o_x_pipe = SwitchPipe(hatch_time=0, hatch_value=False)
+    o_x_pipe.add(at=1, value=True)
+    # print(opacity_pipe.to_list())
+    # print(opacity_pipe.get_latest_value(at=21))
+    print(o_x_pipe.to_list())
+    print(o_x_pipe.get_latest_value(at=1.1))

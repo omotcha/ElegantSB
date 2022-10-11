@@ -4,7 +4,7 @@ env: any
 name: Scene.py
 scene state (controllers)
 """
-from util.storyboard.base import ActionPipe
+from util.storyboard.base import ActionPipe, SwitchPipe
 
 
 class SceneState:
@@ -147,7 +147,7 @@ class SceneController:
     """
     [omo]tcha: SceneController just looks like an interface, of which the actions are not fully implemented.
     So do not use it directly unless you implement it yourself.
-    A scene controller can only hatch, morph and mutate
+    A scene controller can hatch, morph, mutate, enable, disable
     """
     def __init__(self):
         """
@@ -156,17 +156,18 @@ class SceneController:
             different from SceneObject, SceneController only have "hatched"/"unhatched" state
         self._hatch_time is when the object is hatched
         self._actions is the dictionary of action pipelines
-            different from SceneObject, SceneController's action pipelines are determined and created in __init__
-            but here initialization of action pipelines is not implemented
-            cuz SceneController should not be used directly
+            different from SceneObject, SceneController's _actions are determined and created in __init__ of subclasses
+        self._switches is the dictionary of switch pipelines
         """
         self._id = "scene_controller_" + str(id(self))
         self._current_state = "egg"
         self._hatch_time = 0
         self._actions = {}
+        self._switches = {}
 
-        # [omo]tcha: here I limit some properties' ability to morph
+        # [omo]tcha: here I limit some properties' ability to morph and to swtich
         self._morphable_props = []
+        self._switchable_props = []
         self._effects = ["chromatical", "bloom", "radial_blur", "color_adjustment",
                          "color_filter", "grey_scale", "noise", "sepia", "dream",
                          "fisheye", "shockwave", "focus", "glitch", "arcade", "tape"]
@@ -215,6 +216,13 @@ class SceneController:
                             raise (Exception("KeyError: Key {} cannot be used for morphing.".format(k)))
 
                     for k in to_morph.keys():
+                        # [omo]tcha: apply a sanity check on whether relevant switch is on
+                        o_k = "override_" + k
+                        if (o_k in self._switchable_props and o_k not in self._switches.keys()) or \
+                                (o_k in self._switchable_props and not self._switches[o_k].get_latest_value(at)):
+                            print("Warning: Relevant switch {} is off at current time {}. "
+                                  "The morph action would not take effect".format(o_k, at))
+
                         if k not in self._actions.keys():
                             self._actions[k] = ActionPipe(self._hatch_time, to_morph[k])
                         self._actions[k].add(at, duration=duration, value=to_morph[k], easing=easing)
@@ -251,6 +259,14 @@ class SceneController:
                             raise (Exception("KeyError: Key {} cannot be used for mutating.".format(k)))
 
                     for k in to_mutate.keys():
+                        # [omo]tcha: apply a sanity check on whether relevant switch is on
+                        o_k = "override_" + k
+                        if (o_k in self._switchable_props and o_k not in self._switches.keys()) \
+                                or (o_k in self._switchable_props and
+                                    not self._switches[o_k].get_latest_value(at-mutate_interval) and
+                                    not self._switches[o_k].get_latest_value(at)):
+                            print("Warning: Relevant switch {} is off at current time {}. "
+                                  "The morph action would not take effect".format(o_k, at-mutate_interval))
                         if k not in self._actions.keys():
                             raise (Exception("LogicError: A property should be declared before doing mutation"))
                         val_retrieve = self._actions[k].get_latest_value(at - mutate_interval)
@@ -272,12 +288,57 @@ class SceneController:
             raise (Exception("ActionError: The object is not active: {}.".format(self._id)))
         return self
 
+    def enable(self, prop, at):
+        """
+        set a switchable property to true at some time
+        :param prop: property
+        :param at: absolute time
+        :return:
+        """
+        if at < 0:
+            raise (Exception("ValueError: Time should be greater than 0, but have {}.".format(at)))
+        if prop not in self._switchable_props:
+            raise (Exception("ValueError: Property {} is not switchable".format(prop)))
+        if prop not in self._switches.keys():
+            self._switches[prop] = SwitchPipe(at, True)
+        else:
+            self._switches[prop].add(at, True)
+        return self
+
+    def disable(self, prop, at):
+        """
+        set a switchable property to false at some time
+        :param prop: property
+        :param at: absolute time
+        :return:
+        """
+        if at < 0:
+            raise (Exception("ValueError: Time should be greater than 0, but have {}.".format(at)))
+        if prop not in self._switchable_props:
+            raise (Exception("ValueError: Property {} is not switchable".format(prop)))
+        if prop not in self._switches.keys():
+            self._switches[prop] = SwitchPipe(at, False)
+        else:
+            self._switches[prop].add(at, False)
+        return self
+
     def to_storyboard(self):
         """
         Parse object to storyboard object, do not use it directly
         :return:
         """
         ret = []
+        for prop, pipe in self._switches.items():
+            dic = {
+                "states": []
+            }
+            pipe = pipe.to_list()
+            for state in pipe:
+                dic["states"].append({
+                    "time": state[0],
+                    prop: state[1]
+                })
+            ret.append(dic)
         for prop, pipe in self._actions.items():
             pipe = pipe.to_list()
             dic = {
@@ -343,7 +404,8 @@ class ScanlineController(SceneController):
         """
         super().__init__()
         self._id = "scanline_controller_" + self._id
-        self._morphable_props += ["scanline_opacity", "scanline_color", "override_scanline_pos", "scanline_pos"]
+        self._morphable_props += ["scanline_opacity", "scanline_color", "scanline_pos"]
+        self._switchable_props += ["override_scanline_pos"]
         self._hatch(init)
 
 
@@ -354,11 +416,15 @@ class CameraController(SceneController):
     def __init__(self):
         super().__init__()
         self._id = "camera_controller_" + self._id
-        self._morphable_props += ["perspective", "x", "y", "z", "rot_x", "rot_y", "rot_z"]
+        self._morphable_props += ["x", "y", "z", "rot_x", "rot_y", "rot_z"]
+        self._switchable_props += ["perspective"]
 
         # [omo]tcha: the coordinate system type of camera, default: camera
         # not settable
         self._coord_sys = "camera"
+        # [omo]tcha: no matter you create a perspective camera controller or an orthographic camera controller,
+        # the "perspective" is set to True at the beginning
+        self.enable("perspective", at=0)
 
 
 class PerspectiveCameraController(CameraController):
@@ -375,6 +441,22 @@ class PerspectiveCameraController(CameraController):
         self._morphable_props += ["fov"]
         self._hatch(init)
 
+    def enable_at(self, at):
+        """
+
+        :param at:
+        :return:
+        """
+        return self.enable("perspective", at)
+
+    def disable_at(self, at):
+        """
+
+        :param at:
+        :return:
+        """
+        return self.disable("perspective", at)
+
 
 class OrthographicCameraController(CameraController):
     """
@@ -389,6 +471,22 @@ class OrthographicCameraController(CameraController):
         self._id = "orthographic_" + self._id
         self._morphable_props += ["size"]
         self._hatch(init)
+
+    def enable_at(self, at):
+        """
+
+        :param at:
+        :return:
+        """
+        return self.disable("perspective", at)
+
+    def disable_at(self, at):
+        """
+
+        :param at:
+        :return:
+        """
+        return self.enable("perspective", at)
 
 
 class EffectController(SceneController):
@@ -406,7 +504,25 @@ class EffectController(SceneController):
         if effect_name not in self._effects:
             raise (Exception("ParameterError: Not a valid effect name: {}".format(effect_name)))
         else:
-            self._morphable_props += [effect_name]
+            self._effect_name = effect_name
+            self._switchable_props = [effect_name]
+            self.disable_at(0)
+
+    def enable_at(self, at):
+        """
+
+        :param at:
+        :return:
+        """
+        return self.enable(self._effect_name, at)
+
+    def disable_at(self, at):
+        """
+
+        :param at:
+        :return:
+        """
+        return self.disable(self._effect_name, at)
 
 
 class Chromatical(EffectController):

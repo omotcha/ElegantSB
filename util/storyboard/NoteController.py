@@ -4,7 +4,7 @@ env: any
 name: Scene.py
 note state (note controllers)
 """
-from util.storyboard.base import ActionPipe, NoteSelector
+from util.storyboard.base import ActionPipe, SwitchPipe
 from copy import deepcopy
 
 
@@ -61,7 +61,7 @@ class NoteState:
 
 class NoteController:
     """
-    A note controller can not been destroyed
+    A note controller can also enable/disable but can not been destroyed
     """
 
     def __init__(self, target, coord_sys="note"):
@@ -72,6 +72,7 @@ class NoteController:
         self._current_state is the object lifecycle state
         self._hatch_time is when the object is hatched
         self._actions is the dictionary of action pipelines
+        self._
         self._delay is used when imitating
         self._coord_sys is the coordinate system used in note position
         :param target:  notes target, it can be a list of integers(note id) or a note selector object
@@ -96,6 +97,7 @@ class NoteController:
         self._current_state = "egg"
         self._hatch_time = 0
         self._actions = {}
+        self._switches = {}
         self._delay = 0
 
         # [omo]tcha: here I limit some properties' ability to morph and move
@@ -103,9 +105,8 @@ class NoteController:
         self._scalable_props = ["size_multiplier"]
         self._movable_props = ["x", "y"]
         self._rotatable_props = ["rot_x", "rot_y", "rot_z"]
-
-        # "lock" means setting override_{prop} = False
-        self._lockable_props = self._movable_props + self._rotatable_props + ["ring_color", "fill_color"]
+        self._switchable_props = ["override_" + prop for prop in
+                                  self._movable_props + self._rotatable_props + ["ring_color", "fill_color"]]
 
         if coord_sys in ["note", "stage"]:
             self._coord_sys = coord_sys

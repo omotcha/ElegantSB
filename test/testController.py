@@ -24,17 +24,19 @@ def test():
     global_note_controller = GlobalNoteController(init={"note_opacity_multiplier": 0.5})\
         .morph(at=t[39], to_morph={"note_opacity_multiplier": 1}, duration=4)\
         .morph(at=t[39], to_morph={"note_fill_colors": NoteFillColors().to_list()}, duration=4)
-    scanline_controller = ScanlineController(init={"override_scanline_pos": False})\
-        .morph(at=t[10], to_morph={"override_scanline_pos": True, "scanline_pos": 0.5}, duration=1)
-    perspective_camera_controller = PerspectiveCameraController(init={"perspective": True, "fov": 53.2})\
+    scanline_controller = ScanlineController(init={})\
+        .enable("override_scanline_pos", at=t[10])\
+        .morph(at=t[10], to_morph={"scanline_pos": 0.5}, duration=1)
+    perspective_camera_controller = PerspectiveCameraController(init={"fov": 53.2})\
         .mutate(at=t[20], to_mutate={"fov": 55.2}, animation=animation)
-    chromatical_effect = Chromatical(init={"chromatical": False, "chromatical_intensity": 0})\
-        .morph(at=t[19], to_morph={"chromatical": True, "chromatical_intensity": 0.5}, duration=1)
+    chromatical_effect = Chromatical(init={"chromatical_intensity": 0})\
+        .enable_at(t[19])\
+        .morph(at=t[19], to_morph={"chromatical_intensity": 0.5}, duration=1)
     storyboard.add(chromatical_effect)
-    # storyboard.add(perspective_camera_controller)
-    # storyboard.add(ui_controller)
-    # storyboard.add(global_note_controller)
-    # storyboard.add(scanline_controller)
+    storyboard.add(perspective_camera_controller)
+    storyboard.add(ui_controller)
+    storyboard.add(global_note_controller)
+    storyboard.add(scanline_controller)
     print(storyboard.parse())
 
 
