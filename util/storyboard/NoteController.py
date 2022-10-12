@@ -4,7 +4,7 @@ env: any
 name: Scene.py
 note state (note controllers)
 """
-from util.storyboard.base import ActionPipe, SwitchPipe
+from util.storyboard.base import ActionPipe, SwitchPipe, Animation
 from copy import deepcopy
 
 
@@ -435,15 +435,15 @@ class NoteController:
             for i in range(1, len(action_pipe)):
                 prop_states[action_pipe[i][0] + self._delay] = {
                     "time": action_pipe[i][0] + self._delay,
-                    prop: action_pipe[i - 1][2]
-                    if prop in ["x", "y"] and self._coord_sys == "stage" else action_pipe[0][2],
+                    prop: "stage{}:{}".format(prop.upper, action_pipe[i-1][2])
+                    if prop in ["x", "y"] and self._coord_sys == "stage" else action_pipe[i-1][2],
                     "easing": action_pipe[i][3]
                 }
                 prop_states[action_pipe[i][1] + self._delay] = {
                     "time": action_pipe[i][1] + self._delay,
-                    prop: action_pipe[i][2]
-                    if prop in ["x", "y"] and self._coord_sys == "stage" else action_pipe[0][2],
-                    "easing": action_pipe[i - 1][3]
+                    prop: "stage{}:{}".format(prop.upper, action_pipe[i][2])
+                    if prop in ["x", "y"] and self._coord_sys == "stage" else action_pipe[i][2],
+                    "easing": action_pipe[i-1][3]
                 }
 
             if "override_" + prop in self._switchable_props:
@@ -463,5 +463,10 @@ class NoteController:
 
 
 if __name__ == '__main__':
-    nc = NoteController(target=[1, 2], coord_sys="note").hatch(at=1, init={"x": 0.5}).disable("override_x", 10)
+    ani = Animation()
+    ani.easing = "easeInQuad"
+    nc = NoteController(target=[1, 2], coord_sys="note")\
+        .hatch(at=1, init={"x": 0.5})\
+        .disable("override_x", 10)\
+        .move(at=11, to=(1, 2), duration=1, animation=ani)
     print(nc.to_storyboard())
