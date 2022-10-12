@@ -5,8 +5,7 @@ name: base.py
 base classes
 """
 from bisect import bisect_right
-
-MAX_PIPE_TIME = 10000
+from configs.config import MAX_PIPE_TIME, TIME_PRECISION
 
 
 class Vertex:
@@ -84,6 +83,8 @@ class ActionPipe:
         :param hatch_time:
         :param hatch_value:
         """
+        if isinstance(TIME_PRECISION, int) and TIME_PRECISION > 0:
+            hatch_time = round(hatch_time, TIME_PRECISION)
         if hatch_time < 0 or hatch_time >= MAX_PIPE_TIME:
             raise (Exception("ValueError: Invalid hatch time: {}".format(hatch_time)))
         self._pipe = {hatch_time: (hatch_time, hatch_time, hatch_value, "linear")}
@@ -98,14 +99,16 @@ class ActionPipe:
         :param easing: easing type
         :return:
         """
+        if isinstance(TIME_PRECISION, int) and TIME_PRECISION > 0:
+            at = round(at, TIME_PRECISION)
+            duration = round(duration, TIME_PRECISION)
         if at < self._hatch_time or at + duration >= MAX_PIPE_TIME:
             raise (Exception("ValueError: Invalid time period: {} - {}".format(at, at + duration)))
         key_list = list(self._pipe.keys())
         bi = bisect_right(key_list, at)
         if bi:
-            if at >= self._pipe[key_list[bi - 1]][1] \
-                    and bi == len(key_list) \
-                    or at + duration <= self._pipe[key_list[bi]][0]:
+            if (at >= self._pipe[key_list[bi - 1]][1] and bi == len(key_list)) \
+                    or (at >= self._pipe[key_list[bi - 1]][1] and at + duration <= self._pipe[key_list[bi]][0]):
                 self._pipe[at] = (at, at + duration, value, easing)
                 return True
             else:
@@ -127,6 +130,8 @@ class ActionPipe:
         :param at: query time
         :return:
         """
+        if isinstance(TIME_PRECISION, int) and TIME_PRECISION > 0:
+            at = round(at, TIME_PRECISION)
         if at < self._hatch_time or at >= MAX_PIPE_TIME:
             raise (Exception("ValueError: Invalid query time: {}".format(at)))
         key_list = list(self._pipe.keys())
@@ -150,6 +155,8 @@ class SwitchPipe:
         :param hatch_time:
         :param hatch_value:
         """
+        if isinstance(TIME_PRECISION, int) and TIME_PRECISION > 0:
+            hatch_time = round(hatch_time, TIME_PRECISION)
         if hatch_time < 0 or hatch_time >= MAX_PIPE_TIME:
             raise (Exception("ValueError: Invalid hatch time: {}".format(hatch_time)))
         self._pipe = {hatch_time: hatch_value}
@@ -162,9 +169,10 @@ class SwitchPipe:
         :param value: value of property
         :return:
         """
+        if isinstance(TIME_PRECISION, int) and TIME_PRECISION > 0:
+            at = round(at, TIME_PRECISION)
         if at < self._hatch_time or at >= MAX_PIPE_TIME:
             raise (Exception("ValueError: Invalid time: {}".format(at)))
-        key_list = list(self._pipe.keys())
         if at in self._pipe.keys():
             print("Warning: Time already exists in current switch pipe, the value would be overridden by the new one.")
         self._pipe[at] = value
@@ -182,6 +190,8 @@ class SwitchPipe:
         :param at: query time
         :return:
         """
+        if isinstance(TIME_PRECISION, int) and TIME_PRECISION > 0:
+            at = round(at, TIME_PRECISION)
         if at < self._hatch_time or at >= MAX_PIPE_TIME:
             raise (Exception("ValueError: Invalid query time: {}".format(at)))
         key_list = list(self._pipe.keys())
