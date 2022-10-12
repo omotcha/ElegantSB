@@ -7,6 +7,7 @@ Tester of Note Controller object
 
 import os
 from configs.config import example_dir
+from util.JsonUtil import *
 from util.chart.analyzer import ChartAnalyzer
 from util.storyboard.NoteController import *
 from util.storyboard.base import Animation, NoteFillColors

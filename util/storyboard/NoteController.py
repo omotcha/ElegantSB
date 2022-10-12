@@ -420,10 +420,6 @@ class NoteController:
         ret = []
         for prop, action_pipe in self._actions.items():
             action_pipe = action_pipe.to_list()
-            prop_dic = {
-                "note": self._notes,
-                "states": []
-            }
             prop_states = {
                 action_pipe[0][0]: {
                     "time": action_pipe[0][0],
@@ -456,9 +452,10 @@ class NoteController:
                             "time": state[0]+self._delay,
                             "override_" + prop: state[1]
                         }
-            for state in prop_states.values():
-                prop_dic["states"].append(state)
-            ret.append(prop_dic)
+            ret.append({
+                "note": self._notes,
+                "states": [v for _, v in prop_states.items()]
+            })
         return ret
 
 

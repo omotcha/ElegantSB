@@ -12,6 +12,13 @@ from configs.config import example_dir
 class ChartAnalyzer:
 
     def __init__(self, chart_f):
+        if chart_f is None:
+            chart_f = os.path.join(example_dir, "nhelv.json")
+        self._chart = Chart(chart_f)
+
+    def load(self, chart_f):
+        if chart_f is None:
+            chart_f = os.path.join(example_dir, "nhelv.json")
         self._chart = Chart(chart_f)
 
     def get_time(self, query, by="note_id"):
