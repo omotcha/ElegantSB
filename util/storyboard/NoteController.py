@@ -136,7 +136,8 @@ class NoteController:
                         self._actions[k] = ActionPipe(at, init[k])
                     for k in self._switchable_props:
                         # [omo]tcha: in note controllers, all switchable properties start with "override_"
-                        if k.split("_")[1] in init.keys():
+                        key = k.split("_")[1]
+                        if key in init.keys() and init[key] is not None:
                             self._switches[k] = SwitchPipe(at, True)
                         else:
                             self._switches[k] = SwitchPipe(at, False)

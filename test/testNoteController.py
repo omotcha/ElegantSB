@@ -29,15 +29,26 @@ def testInitAndHatch():
     # all props should be hatchable and should be hatched to a proper value
     for prop in hatchable_props:
         nc = NoteController(target=1, coord_sys="note").hatch(at=0, init={prop: default_state.__getattribute__(prop)})
-        print(nc.to_storyboard())
+        # print(nc.to_storyboard())
+
+
+def testMove():
+    prop = "x"
+    nc = NoteController(target=1, coord_sys="note").hatch(at=0, init={prop: 0})
+    # nc = nc.move(at=10, to=(1, None), duration=10, animation=ani)
+    # nc = nc.move(at=10, to=(None, None), duration=10, animation=ani)
+    # nc = nc.move(at=10, to=(1, 1), duration=10, animation=ani)
+    print(nc.to_storyboard())
+    nc = nc.move(at=0, to=(1, 1), duration=10, animation=ani)
+    print(nc.to_storyboard())
 
 
 def test():
-    note_controller = NoteController(target=1, coord_sys="stage")\
+    nc = NoteController(target=1, coord_sys="stage")\
         .hatch(at=1, init={"x": 200})\
         .disable("override_x", 10)\
         .move(at=11, to=(100, 200), duration=1, animation=ani)
-    print(note_controller.to_storyboard())
+    # print(nc.to_storyboard())
 
 
 if __name__ == '__main__':
