@@ -9,10 +9,63 @@ from configs.config import MAX_PIPE_TIME, TIME_PRECISION
 
 
 class Vertex:
+    """
+    Vertex is used for Line Segments, with x,y pos in stageXY coord sys used
+    """
     def __init__(self, x, y, z=None):
         self.x = x  # stageX coord sys
         self.y = y  # stageY coord sys
         self.z = 0 if z is None else z  # depth coord sys
+
+
+class Pos2D:
+    """
+    Pos2D is a general 2D coord class, by default in noteXY coord sys
+    """
+
+    def __init__(self, x, y, coord_sys="note"):
+        self.x = x
+        self.y = y
+        if coord_sys in ["note", "stage", "camera"]:
+            self._coord_sys = coord_sys
+        else:
+            raise (Exception("ParameterError: Invalid coordinate system: {}".format(coord_sys)))
+
+    def get_vertex_by_signature(self):
+        """
+        :return:
+        """
+        if self._coord_sys == "stage":
+            return Vertex(self.x, self.y)
+        else:
+            # for test: if a vertex x,y pos supports other coord sys
+            return Vertex("{}X:{}".format(self._coord_sys, self.x), "{}Y:{}".format(self._coord_sys, self.y))
+
+    def to_stage_pos(self):
+        """
+        for test, only support note->stage
+        :return:
+        """
+        if self._coord_sys == "note":
+            self.x = 800*self.x-400
+            self.y = 600*self.y-600
+            self._coord_sys = "stage"
+        else:
+            print("Warning: Only note coordinate system can be converted to stage coordinate system.")
+        return self
+
+    def to_note_pos(self):
+        """
+        for test, only support stage->note
+        :return:
+        """
+        if self._coord_sys == "stage":
+            self.x = (self.x+400)/800
+            self.y = (self.y+300)/600
+            self._coord_sys = "note"
+        else:
+            print("Warning: Only stage coordinate system can be converted to notecoordinate system.")
+        return self
 
 
 class Animation:
