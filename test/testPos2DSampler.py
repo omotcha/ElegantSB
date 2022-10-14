@@ -8,7 +8,14 @@ Pos2DSampler tester
 from util.sampling import Pos2DSampler
 
 
-def test():
+def testLine():
+    sampler = Pos2DSampler(n_sample=21)
+    samples = sampler.sample(sample_type="line", option=(0, 0, 1, 1))
+    for i in samples:
+        print(i.x, i.y)
+
+
+def testCircle():
     sampler = Pos2DSampler(n_sample=20)
     samples = sampler.sample(sample_type="circle")
     for i in samples:
@@ -16,4 +23,4 @@ def test():
 
 
 if __name__ == '__main__':
-    test()
+    testLine()

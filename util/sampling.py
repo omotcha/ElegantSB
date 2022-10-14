@@ -10,7 +10,7 @@ from util.storyboard.base import Pos2D
 
 class Pos2DSampler:
     """
-    Pos2DSampler is a 2D point sampler based on a polar coord sys.
+    Pos2DSampler is a 2D point sampler based on a cartesian/polar coord sys.
     It can be directly converted to noteXY coord sys.
     """
 
@@ -24,7 +24,7 @@ class Pos2DSampler:
         self._samples = []
         for i in range(n_sample):
             self._samples.append(Pos2D(0, 0))
-        self._sample_types = ["circle"]
+        self._sample_types = ["circle", "line"]
 
     @staticmethod
     def _circle(r, t, a=0.5, b=0.5):
@@ -60,16 +60,32 @@ class Pos2DSampler:
         ret = []
         if sample_type == "circle":
             if option is None:
+                # [omo]tcha: here option is the degree of the first sampling point
                 option = 0
-            deg_list = uniform_time_segment(option, option+360, n_seg=len(self._samples))
-
+            if not isinstance(option, int) or not isinstance(option, float):
+                raise (Exception("FormatError: Invalid value for degree: {}".format(option)))
+            deg_list = uniform_segment(option, option+360, n_seg=len(self._samples))
             for i in range(len(deg_list) - 1):
                 x, y = self._circle(1, deg_list[i])
                 ret.append(Pos2D(x, y, coord_sys="note"))
+        elif sample_type == "line":
+            if not isinstance(option, tuple):
+                # [omo]tcha: here option is (x1,y1,x2,y2) indicating two end points of a line segment
+                raise (Exception("FormatError: Invalid value for end points: {}".format(option)))
+            if len(option) != 4 or (option[0] == option[2] and option[1] == option[3]):
+                raise (Exception("FormatError: Invalid value for end points: {}".format(option)))
+            for i in range(4):
+                if option[i] < 0 or option[i] > 1:
+                    raise (Exception("FormatError: Invalid value for end points: {}".format(option)))
+            x = uniform_segment(option[0], option[2], n_seg=len(self._samples)-1)
+            y = uniform_segment(option[1], option[3], n_seg=len(self._samples)-1)
+            for i in range(len(self._samples)):
+                ret.append(Pos2D(x[i], y[i], coord_sys="note"))
+
         return ret
 
 
-def uniform_time_segment(start, end, n_seg):
+def uniform_segment(start, end, n_seg):
     """
 
     :param start: start time (absolute time)
@@ -87,4 +103,4 @@ def uniform_time_segment(start, end, n_seg):
 
 
 if __name__ == '__main__':
-    print(uniform_time_segment(0, 360, 4))
+    print(uniform_segment(0, 360, 4))
