@@ -61,8 +61,8 @@ class Pos2DSampler:
         if sample_type == "circle":
             if option is None:
                 # [omo]tcha: here option is the degree of the first sampling point
-                option = 0
-            if not isinstance(option, int) or not isinstance(option, float):
+                option = 0.0
+            if not isinstance(option, int) and not isinstance(option, float):
                 raise (Exception("FormatError: Invalid value for degree: {}".format(option)))
             deg_list = uniform_segment(option, option+360, n_seg=len(self._samples))
             for i in range(len(deg_list) - 1):
@@ -87,10 +87,10 @@ class Pos2DSampler:
 
 def uniform_segment(start, end, n_seg):
     """
-
-    :param start: start time (absolute time)
-    :param end: end time (absolute time)
-    :param n_seg: number of time segments
+    cut a segment(e.g. time period)into smaller pieces in a uniform way
+    :param start: start value
+    :param end: end value
+    :param n_seg: number of segments
     :return:
     """
     if n_seg < 0 or not isinstance(n_seg, int):

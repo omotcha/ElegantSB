@@ -20,7 +20,9 @@ def testCircle():
     samples = sampler.sample(sample_type="circle")
     for i in samples:
         print(i.x, i.y)
+        stage_pos = i.to_stage_pos()
+        print(stage_pos.x, stage_pos.y)
 
 
 if __name__ == '__main__':
-    testLine()
+    testCircle()

@@ -47,8 +47,8 @@ class Pos2D:
         :return:
         """
         if self._coord_sys == "note":
-            self.x = 800*self.x-400
-            self.y = 600*self.y-600
+            self.x = round(800*self.x-400, 4)
+            self.y = round(600*self.y-300, 4)
             self._coord_sys = "stage"
         else:
             print("Warning: Only note coordinate system can be converted to stage coordinate system.")
@@ -256,6 +256,17 @@ class SwitchPipe:
             raise (Exception("ValueError: Unexpected bisection error for time: {}".format(at)))
 
 
+def get_easing_types():
+    easing_direction = ["In", "Out", "InOut"]
+    easing_func_type = ["Sine", "Quad", "Cubic", "Quart", "Quint", "Expo", "Circ", "Back", "Elastic", "Bounce"]
+    ret = []
+    for i in easing_direction:
+        for j in easing_func_type:
+            ret.append("ease{}{}".format(i, j))
+    ret.append("linear")
+    return ret
+
+
 if __name__ == '__main__':
     opacity_pipe = ActionPipe(hatch_time=0, hatch_value=0)
     opacity_pipe.add(at=1, duration=10, value=1, easing="easeInCube")
@@ -266,5 +277,6 @@ if __name__ == '__main__':
     o_x_pipe.add(at=1, value=True)
     # print(opacity_pipe.to_list())
     # print(opacity_pipe.get_latest_value(at=21))
-    print(o_x_pipe.to_list())
-    print(o_x_pipe.get_latest_value(at=1.1))
+    # print(o_x_pipe.to_list())
+    # print(o_x_pipe.get_latest_value(at=1.1))
+    print(get_easing_types())
