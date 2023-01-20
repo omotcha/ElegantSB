@@ -25,4 +25,5 @@ def testCircle():
 
 
 if __name__ == '__main__':
+    testLine()
     testCircle()

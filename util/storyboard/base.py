@@ -64,7 +64,7 @@ class Pos2D:
             self.y = (self.y+300)/600
             self._coord_sys = "note"
         else:
-            print("Warning: Only stage coordinate system can be converted to notecoordinate system.")
+            print("Warning: Only stage coordinate system can be converted to note coordinate system.")
         return self
 
 
@@ -257,11 +257,11 @@ class SwitchPipe:
 
 
 def get_easing_types():
-    easing_direction = ["In", "Out", "InOut"]
-    easing_func_type = ["Sine", "Quad", "Cubic", "Quart", "Quint", "Expo", "Circ", "Back", "Elastic", "Bounce"]
+    easing_directions = ["In", "Out", "InOut"]
+    easing_func_types = ["Sine", "Quad", "Cubic", "Quart", "Quint", "Expo", "Circ", "Back", "Elastic", "Bounce"]
     ret = []
-    for i in easing_direction:
-        for j in easing_func_type:
+    for i in easing_directions:
+        for j in easing_func_types:
             ret.append("ease{}{}".format(i, j))
     ret.append("linear")
     return ret
